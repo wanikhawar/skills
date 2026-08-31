@@ -1,106 +1,89 @@
 ---
 name: obsidian-cli
-description: Interact with Obsidian vaults using the Obsidian CLI to read, create, search, and manage notes, tasks, properties, and more. Also supports plugin and theme development with commands to reload plugins, run JavaScript, capture errors, take screenshots, and inspect the DOM. Use when the user asks to interact with their Obsidian vault, manage notes, search vault content, perform vault operations from the command line, or develop and debug Obsidian plugins and themes.
+description: Use the registered Obsidian CLI for operations that need Obsidian semantics, including exact vault queries, typed properties, backlinks, unresolved links, Bases, moves and renames with link updates, or plugin/theme debugging. Do not use merely because a vault file can be read or patched directly, and do not mistake the desktop GUI launcher for the CLI.
+metadata:
+  short-description: Safe Obsidian CLI operations and debugging
 ---
 
 # Obsidian CLI
 
-Use the `obsidian` CLI to interact with a running Obsidian instance. Requires Obsidian to be open.
+Use the CLI when Obsidian's index, link resolver, typed properties, history, Base engine, or developer runtime materially improves the task. The desktop app must be installed and running; the CLI requires a current installer and must be enabled under **Settings → General → Command line interface**.
 
-## Command reference
+## Capability check
 
-Run `obsidian help` to see all available commands. This is always up to date. Full docs: https://help.obsidian.md/cli
+Before depending on the CLI:
 
-## Syntax
+1. Resolve the executable with `command -v obsidian`.
+2. On Linux, prefer the registered CLI at `~/.local/bin/obsidian`. A distro `/usr/bin/obsidian` may be a shell wrapper that launches Electron.
+3. Inspect a suspicious wrapper before running it. Do not pass `help` to a GUI launcher.
+4. Run a short-timeout `version` or `help` check. If it does not return CLI output promptly, treat the CLI as unavailable and use safe filesystem operations.
+5. Do not repeatedly launch Obsidian while probing availability.
 
-**Parameters** take a value with `=`. Quote values with spaces:
-
-```bash
-obsidian create name="My Note" content="Hello world"
-```
-
-**Flags** are boolean switches with no value:
+The bundled check performs these tests without executing a known GUI wrapper:
 
 ```bash
-obsidian create name="My Note" silent overwrite
+python3 scripts/check_cli.py
 ```
 
-For multiline content use `\n` for newline and `\t` for tab.
+Current documentation: <https://obsidian.md/help/cli>
 
-## File targeting
+## Target the correct vault and file
 
-Many commands accept `file` or `path` to target a file. Without either, the active file is used.
-
-- `file=<name>` — resolves like a wikilink (name only, no path or extension needed)
-- `path=<path>` — exact path from vault root, e.g. `folder/note.md`
-
-## Vault targeting
-
-Commands target the most recently focused vault by default. Use `vault=<name>` as the first parameter to target a specific vault:
+If the current working directory is inside a vault, that vault is the default; otherwise the active vault is used. For certainty, put `vault=<name-or-id>` before the command and verify:
 
 ```bash
-obsidian vault="My Vault" search query="test"
+obsidian vault="Academic" vault info=path
 ```
 
-## Common patterns
+For files:
+
+- `path="Folder/Exact Note.md"` is exact from the vault root and is preferred whenever a path is known.
+- `file="Note Name"` resolves like a wikilink and can be ambiguous when basenames repeat.
+- Without `file` or `path`, many commands target the active file; avoid that implicit target in automated work.
+
+Quote every value containing spaces. Parameters use `name=value`; flags have no value. Use `\n` and `\t` in CLI content strings.
+
+## High-value read-only commands
 
 ```bash
-obsidian read file="My Note"
-obsidian create name="New Note" content="# Hello" template="Template" silent
-obsidian append file="My Note" content="New line"
-obsidian search query="search term" limit=10
-obsidian daily:read
-obsidian daily:append content="- [ ] New task"
-obsidian property:set name="status" value="done" file="My Note"
-obsidian tasks daily todo
-obsidian tags sort=count counts
-obsidian backlinks file="My Note"
+obsidian vault="Academic" read path="Thermodynamics/Entropy.md"
+obsidian vault="Academic" search query="entropy generation" path="Thermodynamics" limit=20
+obsidian vault="Academic" search:context query="entropy generation" path="Thermodynamics" limit=20
+obsidian vault="Academic" backlinks path="Thermodynamics/Entropy.md" counts
+obsidian vault="Academic" links path="Thermodynamics/Entropy.md"
+obsidian vault="Academic" unresolved verbose
+obsidian vault="Academic" properties path="Thermodynamics/Entropy.md" format=yaml
+obsidian vault="Academic" property:read name="status" path="Thermodynamics/Entropy.md"
+obsidian vault="Academic" base:query path="Dashboards/Review.base" view="Due" format=json
+obsidian vault="Academic" diff path="Thermodynamics/Entropy.md"
 ```
 
-Use `--copy` on any command to copy output to clipboard. Use `silent` to prevent files from opening. Use `total` on list commands to get a count.
+Use `format=json` when another tool will parse the output. Use `total` for inexpensive counts.
 
-## Plugin development
+## Mutations
 
-### Develop/test cycle
+Run mutations only when the user authorized the corresponding vault change.
 
-After making code changes to a plugin or theme, follow this workflow:
+- Use `create path=...` without `overwrite` first; add `overwrite` only when replacement is explicit and the target was inspected.
+- Use `property:set ... type=text|list|number|checkbox|date|datetime` for typed properties.
+- Prefer `move` or `rename` for existing notes so Obsidian can update internal links according to vault settings.
+- `delete` uses trash by default. Never add `permanent` unless permanent deletion was explicitly requested.
+- Treat `history:restore`, `sync:restore`, plugin install/uninstall, and theme changes as separate state-changing actions requiring explicit scope.
 
-1. **Reload** the plugin to pick up changes:
-   ```bash
-   obsidian plugin:reload id=my-plugin
-   ```
-2. **Check for errors** — if errors appear, fix and repeat from step 1:
-   ```bash
-   obsidian dev:errors
-   ```
-3. **Verify visually** with a screenshot or DOM inspection:
-   ```bash
-   obsidian dev:screenshot path=screenshot.png
-   obsidian dev:dom selector=".workspace-leaf" text
-   ```
-4. **Check console output** for warnings or unexpected logs:
-   ```bash
-   obsidian dev:console level=error
-   ```
+After a mutation, read the target back and run a relevant query such as `unresolved`, `properties`, or `base:query`.
 
-### Additional developer commands
+## Plugin and theme development
 
-Run JavaScript in the app context:
+After an authorized code change:
 
 ```bash
-obsidian eval code="app.vault.getFiles().length"
+obsidian plugin:reload id=my-plugin
+obsidian dev:errors
+obsidian dev:console level=error
+obsidian dev:screenshot path="/tmp/my-plugin.png"
+obsidian dev:dom selector=".workspace-leaf" text
 ```
 
-Inspect CSS values:
+Use `eval` only with code whose scope and effects are understood. Prefer a read-only DOM or application query before mutation. Clear error buffers only when doing so will not erase evidence needed by the user.
 
-```bash
-obsidian dev:css selector=".workspace-leaf" prop=background-color
-```
-
-Toggle mobile emulation:
-
-```bash
-obsidian dev:mobile on
-```
-
-Run `obsidian help` to see additional developer commands including CDP and debugger controls.
+If the CLI is unavailable, report that semantic or visual verification could not be performed; do not claim it succeeded.

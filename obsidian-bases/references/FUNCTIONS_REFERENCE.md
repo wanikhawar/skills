@@ -1,173 +1,80 @@
-# Functions Reference
+# Bases Formula Reference
 
-## Global Functions
+Use this as a compact working reference, not as a substitute for the current [official function documentation](https://obsidian.md/help/bases/functions).
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `date()` | `date(string): date` | Parse string to date. Format: `YYYY-MM-DD HH:mm:ss` |
-| `duration()` | `duration(string): duration` | Parse duration string |
-| `now()` | `now(): date` | Current date and time |
-| `today()` | `today(): date` | Current date (time = 00:00:00) |
-| `if()` | `if(condition, trueResult, falseResult?)` | Conditional |
-| `min()` | `min(n1, n2, ...): number` | Smallest number |
-| `max()` | `max(n1, n2, ...): number` | Largest number |
-| `number()` | `number(any): number` | Convert to number |
-| `link()` | `link(path, display?): Link` | Create a link |
-| `list()` | `list(element): List` | Wrap in list if not already |
-| `file()` | `file(path): file` | Get file object |
-| `image()` | `image(path): image` | Create image for rendering |
-| `icon()` | `icon(name): icon` | Lucide icon by name |
-| `html()` | `html(string): html` | Render as HTML |
-| `escapeHTML()` | `escapeHTML(string): string` | Escape HTML characters |
+## Global functions
 
-## Any Type Functions
+| Function | Purpose |
+| --- | --- |
+| `date(value)` | Parse a date string. |
+| `duration(value)` | Parse a duration for date/duration arithmetic. |
+| `now()` | Current date and time. |
+| `today()` | Current date at midnight. |
+| `if(condition, yes, no?)` | Conditional result. |
+| `number(value)` | Convert a compatible value to a number. |
+| `list(value)` | Preserve a list or wrap one value as a list. |
+| `file(path)` | Resolve a file object. |
+| `link(path, display?)` | Render an internal or external link. |
+| `image(path)` | Render an image value. |
+| `icon(name)` | Render a Lucide icon. |
+| `html(value)` | Render trusted HTML. Do not place untrusted extracted HTML here. |
+| `escapeHTML(value)` | Escape text before incorporating it into HTML. |
+| `min(...)`, `max(...)` | Select numeric minimum or maximum. |
+| `random()` | Random number from 0 to 1; refreshes when the view loads. |
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `isTruthy()` | `any.isTruthy(): boolean` | Coerce to boolean |
-| `isType()` | `any.isType(type): boolean` | Check type |
-| `toString()` | `any.toString(): string` | Convert to string |
-
-## Date Functions & Fields
-
-**Fields:** `date.year`, `date.month`, `date.day`, `date.hour`, `date.minute`, `date.second`, `date.millisecond`
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `date()` | `date.date(): date` | Remove time portion |
-| `format()` | `date.format(string): string` | Format with Moment.js pattern |
-| `time()` | `date.time(): string` | Get time as string |
-| `relative()` | `date.relative(): string` | Human-readable relative time |
-| `isEmpty()` | `date.isEmpty(): boolean` | Always false for dates |
-
-## Duration Type
-
-When subtracting two dates, the result is a **Duration** type (not a number). Duration has its own properties and methods.
-
-**Duration Fields:**
-| Field | Type | Description |
-|-------|------|-------------|
-| `duration.days` | Number | Total days in duration |
-| `duration.hours` | Number | Total hours in duration |
-| `duration.minutes` | Number | Total minutes in duration |
-| `duration.seconds` | Number | Total seconds in duration |
-| `duration.milliseconds` | Number | Total milliseconds in duration |
-
-**IMPORTANT:** Duration does NOT support `.round()`, `.floor()`, `.ceil()` directly. You must access a numeric field first (like `.days`), then apply number functions.
+## Date arithmetic
 
 ```yaml
-# CORRECT: Calculate days between dates
-"(date(due_date) - today()).days"                    # Returns number of days
-"(now() - file.ctime).days"                          # Days since created
-
-# CORRECT: Round the numeric result if needed
-"(date(due_date) - today()).days.round(0)"           # Rounded days
-"(now() - file.ctime).hours.round(0)"                # Rounded hours
-
-# WRONG - will cause error:
-# "((date(due) - today()) / 86400000).round(0)"      # Duration doesn't support division then round
+formulas:
+  created_date: 'file.ctime.date()'
+  created_label: 'file.ctime.format("YYYY-MM-DD")'
+  recent: 'file.mtime > now() - "1 week"'
+  age_days: '((now() - file.ctime) / 86400000).floor()'
+  due_days: 'if(due, ((date(due) - today()) / 86400000).round(0), "")'
+  next_review: 'today() + "7d"'
 ```
 
-## Date Arithmetic
+Subtracting two dates yields a millisecond number. Do not use `.days`, `.hours`, `.minutes`, `.seconds`, or `.milliseconds` on the result.
+
+`duration()` is useful when a duration must be multiplied before adding it to a date:
 
 ```yaml
-# Duration units: y/year/years, M/month/months, d/day/days,
-#                 w/week/weeks, h/hour/hours, m/minute/minutes, s/second/seconds
-
-# Add/subtract durations
-"date + \"1M\""           # Add 1 month
-"date - \"2h\""           # Subtract 2 hours
-"now() + \"1 day\""       # Tomorrow
-"today() + \"7d\""        # A week from today
-
-# Subtract dates returns Duration type
-"now() - file.ctime"                    # Returns Duration
-"(now() - file.ctime).days"             # Get days as number
-"(now() - file.ctime).hours"            # Get hours as number
-
-# Complex duration arithmetic
-"now() + (duration('1d') * 2)"
+formulas:
+  next_window: 'now() + (duration("6h") * 2)'
 ```
 
-## String Functions
+Keep the duration on the left of scalar multiplication.
 
-**Field:** `string.length`
+## Common value methods
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `contains()` | `string.contains(value): boolean` | Check substring |
-| `containsAll()` | `string.containsAll(...values): boolean` | All substrings present |
-| `containsAny()` | `string.containsAny(...values): boolean` | Any substring present |
-| `startsWith()` | `string.startsWith(query): boolean` | Starts with query |
-| `endsWith()` | `string.endsWith(query): boolean` | Ends with query |
-| `isEmpty()` | `string.isEmpty(): boolean` | Empty or not present |
-| `lower()` | `string.lower(): string` | To lowercase |
-| `title()` | `string.title(): string` | To Title Case |
-| `trim()` | `string.trim(): string` | Remove whitespace |
-| `replace()` | `string.replace(pattern, replacement): string` | Replace pattern |
-| `repeat()` | `string.repeat(count): string` | Repeat string |
-| `reverse()` | `string.reverse(): string` | Reverse string |
-| `slice()` | `string.slice(start, end?): string` | Substring |
-| `split()` | `string.split(separator, n?): list` | Split to list |
+| Type | Useful fields/functions |
+| --- | --- |
+| Date | `.year`, `.month`, `.day`, `.hour`, `.date()`, `.format()`, `.time()`, `.relative()` |
+| String | `.length`, `.contains()`, `.startsWith()`, `.endsWith()`, `.lower()`, `.replace()`, `.slice()`, `.split()`, `.trim()` |
+| Number | `.abs()`, `.ceil()`, `.floor()`, `.round()`, `.toFixed()` |
+| List | `.length`, `.contains()`, `.filter()`, `.map()`, `.flat()`, `.join()`, `.slice()`, `.sort()`, `.unique()` |
+| File | `.asLink()`, `.hasLink()`, `.hasTag()`, `.hasProperty()`, `.inFolder()` |
+| Link | `.asFile()`, `.linksTo()` |
+| Object | `.keys()`, `.values()`, `.isEmpty()` |
+| RegExp | `.matches(value)` |
 
-## Number Functions
+Most value types also support `.isEmpty()`, `.isTruthy()`, `.isType()`, or `.toString()` where applicable.
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `abs()` | `number.abs(): number` | Absolute value |
-| `ceil()` | `number.ceil(): number` | Round up |
-| `floor()` | `number.floor(): number` | Round down |
-| `round()` | `number.round(digits?): number` | Round to digits |
-| `toFixed()` | `number.toFixed(precision): string` | Fixed-point notation |
-| `isEmpty()` | `number.isEmpty(): boolean` | Not present |
+## Safe patterns
 
-## List Functions
+Guard an optional property before conversion or arithmetic:
 
-**Field:** `list.length`
+```yaml
+formulas:
+  finished_year: 'if(finished, date(finished).year, "")'
+```
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `contains()` | `list.contains(value): boolean` | Element exists |
-| `containsAll()` | `list.containsAll(...values): boolean` | All elements exist |
-| `containsAny()` | `list.containsAny(...values): boolean` | Any element exists |
-| `filter()` | `list.filter(expression): list` | Filter by condition (uses `value`, `index`) |
-| `map()` | `list.map(expression): list` | Transform elements (uses `value`, `index`) |
-| `reduce()` | `list.reduce(expression, initial): any` | Reduce to single value (uses `value`, `index`, `acc`) |
-| `flat()` | `list.flat(): list` | Flatten nested lists |
-| `join()` | `list.join(separator): string` | Join to string |
-| `reverse()` | `list.reverse(): list` | Reverse order |
-| `slice()` | `list.slice(start, end?): list` | Sublist |
-| `sort()` | `list.sort(): list` | Sort ascending |
-| `unique()` | `list.unique(): list` | Remove duplicates |
-| `isEmpty()` | `list.isEmpty(): boolean` | No elements |
+Use `list()` when a property may be either one value or a list:
 
-## File Functions
+```yaml
+filters:
+  and:
+    - 'list(exams).contains("GATE")'
+```
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `asLink()` | `file.asLink(display?): Link` | Convert to link |
-| `hasLink()` | `file.hasLink(otherFile): boolean` | Has link to file |
-| `hasTag()` | `file.hasTag(...tags): boolean` | Has any of the tags |
-| `hasProperty()` | `file.hasProperty(name): boolean` | Has property |
-| `inFolder()` | `file.inFolder(folder): boolean` | In folder or subfolder |
-
-## Link Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `asFile()` | `link.asFile(): file` | Get file object |
-| `linksTo()` | `link.linksTo(file): boolean` | Links to file |
-
-## Object Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `isEmpty()` | `object.isEmpty(): boolean` | No properties |
-| `keys()` | `object.keys(): list` | List of keys |
-| `values()` | `object.values(): list` | List of values |
-
-## Regular Expression Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `matches()` | `regexp.matches(string): boolean` | Test if matches |
+Use `escapeHTML()` before `html()` when text originated outside the vault or from an uncontrolled property.

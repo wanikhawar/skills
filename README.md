@@ -11,7 +11,7 @@ Each skill lives in its own directory and is defined by a `SKILL.md` file. Some 
 | Skill | What it does |
 | --- | --- |
 | [Defuddle](defuddle/SKILL.md) | Extracts clean Markdown from web pages with the Defuddle CLI, removing navigation and other clutter. |
-| [PDF](pdf/SKILL.md) | Reads, creates, combines, splits, rotates, fills, OCRs, and otherwise processes PDF files. |
+| [PDF](pdf/SKILL.md) | Performs page-aware PDF inspection, extraction, rendering, OCR, structural edits, validation, and Obsidian ingestion. |
 
 ### Obsidian
 
@@ -76,14 +76,15 @@ Merge these PDFs and add page numbers.
 
 You can also name a skill explicitly when you want the agent to use a particular workflow.
 
-## Requirements and notes
+## Requirements and validation
 
-- `defuddle` requires the Defuddle CLI; its skill file includes the installation command.
-- `obsidian-cli` requires Obsidian to be open and its CLI to be available.
+- `defuddle` uses the Defuddle CLI. Check availability before use; dependency installation must be explicitly authorized.
+- `obsidian-cli` requires Obsidian 1.12.7+ to be open and the CLI feature to be registered. On Linux, distinguish the registered `~/.local/bin/obsidian` CLI from a distro GUI launcher.
 - `syllabus-gap-audit` needs web access to check current official syllabi.
 - `vault-operator` contains author-specific vault conventions and should be customized before reuse.
-- PDF operations may require the Python packages or command-line tools documented inside the PDF skill.
-- Individual skill files and bundled reference material may carry their own licensing terms. The PDF skill includes a separate license notice.
+- `pdf/scripts/pdf_ops.py` declares PyMuPDF and pypdf with PEP 723 metadata and runs reproducibly through `uv`; OCR uses OCRmyPDF, Tesseract, and Ghostscript.
+- Static validators are bundled for Markdown, Bases, Canvas, and PDF operations. Run them before claiming a file is valid, then preview/render when visual correctness matters.
+- Individual skill files may carry their own licensing terms; review frontmatter before redistribution.
 
 ## Repository structure
 

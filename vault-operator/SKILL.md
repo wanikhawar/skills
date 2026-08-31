@@ -1,188 +1,96 @@
 ---
 name: vault-operator
-description: "Use when operating on Khawar's Obsidian vault: resolve paths exactly, route vault tasks, edit safely, validate notes, and ask before adding reusable workflow rules."
-version: 1.0.0
-author: Hermes Agent
+description: Operate safely on Khawar's Obsidian vault by resolving vault roots and paths exactly, preserving user conventions, limiting context and edits, and validating every authorized change. Use for vault reads, searches, note or attachment edits, moves, link checks, MOCs, and folder audits; do not infer permission to edit from a linked or active note.
 license: MIT
-platforms: [macos]
 metadata:
-  hermes:
-    tags: [obsidian, vault, note-taking, path-handling, workflow]
-    related_skills: [obsidian]
+  short-description: Safe path-first Obsidian vault operations
 ---
 
 # Vault Operator
 
-## Purpose
+Use this as the shared operating policy for work on Khawar's Obsidian vault. Load the specialized format or domain skill only when the task needs it.
 
-Base operating protocol for Khawar's Obsidian vault. Use this before any vault read, edit, audit, creation, link check, MOC update, or study-note maintenance task.
+## Authorization boundary
 
-Primary rule: **path-first, search-second**. Spaces in file or folder names are normal path characters.
+- A question, selection, active note, link, attachment, image, or supplied source is context only.
+- Read, search, diagnose, and answer in chat by default.
+- Create, edit, move, rename, or delete a vault file only when the user explicitly requests that change.
+- Permission to edit one target does not authorize changes to related notes, MOCs, properties, attachments, or settings.
+- Never commit, restore, reset, or discard unrelated work unless explicitly asked.
 
-## Load With
+## Resolve the vault and target
 
-Also load specialized skills when the task needs them:
+1. For an absolute path, use it exactly.
+2. For a slash-containing vault-relative path, locate the vault root and join it once. A vault root contains `.obsidian/`.
+3. If the target is Markdown and `.md` is omitted, try that extension before searching.
+4. Treat spaces as ordinary path characters and infer the widest plausible path span from the user's sentence.
+5. A URL is not a vault path. Do not misclassify `https://...` as one.
+6. For a title without a path, search filenames first. For a concept, search contents.
+7. Search only after exact resolution fails; then check extension, parent, case, spelling, and nearby basenames.
+8. If multiple real matches remain and choosing one would change the result, ask the user.
 
-- `obsidian` for filesystem-first note operations.
-- A syllabus/PYQ skill for broad exam coverage checks.
-- A formula/audit skill when the task is formula-heavy or subject-specific.
-- Anki/OCR/dashboard skills only when the user asks for those workflows.
+When the Obsidian CLI is available, verify its target with `vault info=path`. Never rely silently on the last-focused vault.
 
-Do not expand scope just because extra skills exist.
+## Tool selection
 
-## Task Intent Router
+Choose the mechanism that preserves the most Obsidian semantics with the least risk:
 
-Classify the user request before acting:
+- Exact read or inspection: direct filesystem read.
+- Filename/content search: `rg --files` and `rg`, or Obsidian CLI search when its vault target is verified.
+- Small text edit: anchored patch; read the changed region back.
+- Typed property change, backlink query, unresolved-link check, or Base query: Obsidian CLI when available.
+- Move or rename: prefer Obsidian CLI so link updates follow vault settings.
+- Canvas/Base/Markdown validation: use the validator bundled with the relevant skill.
+- Git inspection: run it against the repository that actually owns the target file; this vault contains nested repositories.
 
-| Intent | Signal | First action |
-|---|---|---|
-| Exact path | Contains `/` or is absolute | Direct-read/direct-use path |
-| Note title | Short title, no `/` | Filename search |
-| Topic/content | Concept phrase | Content search |
-| Folder scope | Folder or subject audit | List folder/MOC |
-| Creation | “create/add new note” | Check duplicates first |
-| Rewrite/audit | “audit/fix/improve/clearer” | Read target + minimal context |
-| External workflow | Anki/OCR/web/dashboard | Load matching skill |
+Do not use a GUI launcher as if it were the Obsidian CLI. Follow the `obsidian-cli` skill's capability check.
 
-## Path Handling Contract
+## Context and placement
 
-1. If the user provides a slash-containing path, treat it as a path, not a search query.
-2. If the path is absolute, use it exactly. Do not prepend the vault root.
-3. If the path is vault-relative, join it to the vault root once.
-4. If a Markdown note path lacks `.md`, try the same path with `.md` first.
-5. Never split paths on spaces. Never ask for clarification only because a folder or file name contains spaces.
-6. Search only after direct path resolution fails, or when the user gave a title/topic rather than a path.
-7. If direct resolution fails, check extension, parent folder, case/spelling, and nearby filename matches before asking the user.
-
-## Path Confidence Levels
-
-- **A: Exact path** — absolute path or slash-containing vault-relative path. Direct-use first.
-- **B: Likely note title** — no slash, likely filename. Search filenames first.
-- **C: Topic phrase** — conceptual phrase. Search contents.
-- **D: Ambiguous shorthand** — could refer to multiple folders or concepts. Resolve from context; ask only if materially ambiguous.
-
-## File Tool Rules
-
-Prefer file tools over shell commands:
-
-- Read exact note: `read_file`.
-- Find files: `search_files(target="files")`.
-- Search note text: `search_files(target="content", file_glob="*.md")`.
-- Small anchored edit: `patch`.
-- Whole-note rewrite: `write_file`.
-- Multi-file checks or fragile LaTeX edits: `execute_code` with Python file I/O.
-- Git status/diff/checks: `terminal`.
-
-Avoid shell commands for normal note reads/searches. If terminal is unavoidable, quote every path or use Python `pathlib`; never concatenate unquoted paths.
-
-## Context-Minimum Protocol
-
-Do not turn a small task into a vault-wide audit.
-
-For a single-note task:
-
-1. Resolve target path directly when provided.
-2. Read the target note.
-3. Read only necessary local context: MOC, formula sheet, or closely related notes.
-4. Edit only what the user asked for.
-5. Verify the changed file.
-
-For folder-wide tasks, list notes and read in batches. For topic discovery, search filenames before contents.
-
-## Duplicate Prevention
+For one note, read the target and only the local context necessary to interpret the requested change. Do not turn a focused edit into a vault-wide audit.
 
 Before creating a note:
 
-1. Check exact intended path.
-2. Search for same or near-equivalent basename.
-3. Check whether the topic already exists as a section in a broader note.
-4. Create a new note only when it is genuinely missing or explicitly requested.
+1. Check the intended path.
+2. Search equivalent and near-equivalent basenames.
+3. Check whether the material already has an authoritative section elsewhere.
+4. Create the smallest correct home only when it is genuinely missing or explicitly requested.
 
-Do not create duplicates due to path-resolution failure.
+Use the local folder's conventions for frontmatter, tags, headings, attachments, link style, and MOC placement. Do not impose a universal template.
 
-## Content Placement Rules
+## Editing contract
 
-Choose the smallest correct home for new content:
-
-- Navigation/index content → MOC or dashboard.
-- Detailed concept/derivation → topic or chapter note.
-- Short formula reminder → formula sheet or summary section.
-- Repeated exam trap → relevant topic note; optionally formula sheet if formula-related.
-- Raw extracted material → keep separate from polished notes until cleaned.
-- Flashcards → Anki workflow, not the note body unless requested.
-
-## Editing Rules
-
-- Preserve frontmatter, aliases, tags, wikilinks, equations, and unique domain nuance.
-- Use `$...$` and `$$...$$` for LaTeX; do not use bracket-style display math.
-- Do not leave assistant meta-commentary in study notes.
-- Prefer patch for small edits; rewrite only when structure/clarity requires it or the user asks.
-- For LaTeX-heavy edits, avoid transformations that may corrupt braces; verify by reading back.
-
-## Validation Checklist
-
-Before final reply after editing, verify what is relevant:
-
-- Exact user path was attempted before search when a path was provided.
-- File was read back after modification.
-- `$$` delimiters are balanced.
-- No `\[...\]` display math was introduced.
-- Inline `$` usage is not obviously unbalanced.
-- Markdown tables have consistent pipe counts.
-- Wikilinks resolve where practical.
-- `git diff --check` passes for meaningful edits.
-- No duplicate note was created.
-
-## Output Contract
-
-Final responses after vault work should be brief and concrete:
-
-- changed path(s),
-- what changed,
-- what was verified,
-- any unresolved ambiguity or recommended next step.
-
-Do not report unnecessary process detail.
-
-## Error Recovery
-
-If a path read fails:
-
-1. Try `.md` if omitted.
-2. Check whether the parent folder exists.
-3. Search within the intended parent if available.
-4. Search by basename if needed.
-5. Ask the user only after tool-based resolution fails or multiple real matches remain.
-
-If an edit corrupts content, stop, read the file, repair or restore from git only with user-safe scope. Never discard unrelated changes.
-
-## Git Safety
-
-- Check git status/diff for large or risky edits when practical.
-- Never commit, reset, restore, or delete unless explicitly asked.
+- Preserve frontmatter, aliases, tags, wikilinks, equations, citations, block IDs, and unique technical nuance unless the request changes them.
+- Use `$...$` and `$$...$$` for LaTeX; do not introduce `\[...\]`.
+- Avoid assistant commentary in study notes.
+- Do not create raw MCQ replicas in study notes. Convert them to declarative exam insights and retain exam/year provenance when useful.
 - Treat unrelated dirty files as user-owned.
-- Use `git diff --check` as a whitespace/syntax sanity check after edits.
 
-## Self-Improvement Hook
+When explicitly asked to incorporate supplied material, inventory every distinct correct definition, statement, equation, condition, comparison, qualification, and meaningful figure/table/caption detail. Consolidate genuine duplicates without losing additional nuance. Correct or omit only demonstrably wrong, unverifiable, inconsistent, or out-of-scope material.
 
-At the end of a vault task, ask whether to update a skill only when the task revealed a reusable rule, recurring annoyance, folder convention, validation check, routing rule, or agent failure mode.
+## Validation
 
-Ask in this form:
+After an authorized change, verify what applies:
+
+- Read every changed file back.
+- Run the Markdown, Base, Canvas, SVG, or PDF validator appropriate to the format.
+- Check referenced files and embeds exist; use `obsidian unresolved` when the CLI is available.
+- Confirm no duplicate note or unintended file was created.
+- Inspect the owning repository's diff and run `git diff --check` for meaningful text edits.
+- Preview or render when syntax validation cannot establish visual correctness.
+
+For incorporation edits, report separately:
+
+- what was added or expanded;
+- what was already present and consolidated;
+- what was corrected or omitted and why, explicitly saying when nothing was omitted.
+
+For other vault changes, report the exact changed paths, the outcome, validation performed, and any unresolved issue.
+
+## Reusable improvements
+
+Only when a task reveals a durable new vault rule, ask:
 
 > I found a reusable vault rule: `<rule>`. Should I add it to `<skill>` so future agents follow it?
 
-Do not ask for one-off task progress, temporary details, or facts likely to become stale soon.
-
-Place new rules in the right skill:
-
-- Path handling, routing, vault safety → this skill.
-- Subject-note audit workflow → audit skill.
-- Formula conventions → formula skill.
-- Syllabus/PYQ coverage → syllabus/PYQ skill.
-- Anki cards → Anki skill.
-- OCR/PDF ingestion → OCR/document skill.
-- MOC/dashboard rules → MOC/dashboard skill.
-
-## Non-Hermes Agents
-
-If using another agent system, preserve the same behavior: direct filesystem access for exact paths, preserve spaces exactly, quote shell paths, search only when the target is not a path or direct resolution fails, and verify Markdown after edits.
+Do not ask for one-off facts or temporary workflow details.

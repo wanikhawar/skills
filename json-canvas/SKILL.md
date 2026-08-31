@@ -1,13 +1,26 @@
 ---
 name: json-canvas
-description: Create and edit JSON Canvas files (.canvas) with nodes, edges, groups, and connections. Use when working with .canvas files, creating visual canvases, mind maps, flowcharts, or when the user mentions Canvas files in Obsidian.
+description: Create, edit, or validate Obsidian `.canvas` files when the user explicitly requests a Canvas, spatial knowledge map, or direct Canvas-file change. Handle nodes, groups, edges, layout, and vault links; use Mermaid or Markdown instead for ordinary flowcharts that do not need an explorable spatial canvas.
+metadata:
+  short-description: Obsidian JSON Canvas authoring and validation
 ---
 
-# JSON Canvas Skill
+# JSON Canvas
 
-## File Structure
+Use the open [JSON Canvas 1.0 specification](https://jsoncanvas.org/spec/1.0/) while preserving Obsidian-specific vault conventions. A Canvas shown as context is not permission to edit it.
 
-A canvas file (`.canvas`) contains two top-level arrays following the [JSON Canvas Spec 1.0](https://jsoncanvas.org/spec/1.0/):
+Read [references/EXAMPLES.md](references/EXAMPLES.md) only when a complete layout example is useful.
+
+## Choose Canvas deliberately
+
+Use Canvas for spatial exploration, movable clusters, relationship maps, research boards, or user-requested visual navigation. Prefer:
+
+- Mermaid inside a note for a compact process, dependency, or sequence;
+- SVG for exact engineering geometry;
+- a Markdown table for repeated-field comparison;
+- a Base for property-driven database views.
+
+## Data model
 
 ```json
 {
@@ -16,67 +29,15 @@ A canvas file (`.canvas`) contains two top-level arrays following the [JSON Canv
 }
 ```
 
-- `nodes` (optional): Array of node objects
-- `edges` (optional): Array of edge objects connecting nodes
+Every node requires `id`, `type`, `x`, `y`, `width`, and `height`. Node types are `text`, `file`, `link`, and `group`. Every edge requires `id`, `fromNode`, and `toNode`.
 
-## Common Workflows
+The specification requires IDs to be unique strings. Use random lowercase 16-character hexadecimal IDs as this vault's stable convention, but do not reject an existing Canvas merely because its unique IDs use another format.
 
-### 1. Create a New Canvas
+Array order is z-order: earlier nodes render below later nodes. Put groups before the nodes visually contained by them.
 
-1. Create a `.canvas` file with the base structure `{"nodes": [], "edges": []}`
-2. Generate unique 16-character hex IDs for each node (e.g., `"6f0ad84f44ce9c17"`)
-3. Add nodes with required fields: `id`, `type`, `x`, `y`, `width`, `height`
-4. Add edges referencing valid node IDs via `fromNode` and `toNode`
-5. **Validate**: Parse the JSON to confirm it is valid. Verify all `fromNode`/`toNode` values exist in the nodes array
+## Vault-specific note cards
 
-### 2. Add a Node to an Existing Canvas
-
-1. Read and parse the existing `.canvas` file
-2. Generate a unique ID that does not collide with existing node or edge IDs
-3. Choose position (`x`, `y`) that avoids overlapping existing nodes (leave 50-100px spacing)
-4. Append the new node object to the `nodes` array
-5. Optionally add edges connecting the new node to existing nodes
-6. **Validate**: Confirm all IDs are unique and all edge references resolve to existing nodes
-
-### 3. Connect Two Nodes
-
-1. Identify the source and target node IDs
-2. Generate a unique edge ID
-3. Set `fromNode` and `toNode` to the source and target IDs
-4. Optionally set `fromSide`/`toSide` (top, right, bottom, left) for anchor points
-5. Optionally set `label` for descriptive text on the edge
-6. Append the edge to the `edges` array
-7. **Validate**: Confirm both `fromNode` and `toNode` reference existing node IDs
-
-### 4. Edit an Existing Canvas
-
-1. Read and parse the `.canvas` file as JSON
-2. Locate the target node or edge by `id`
-3. Modify the desired attributes (text, position, color, etc.)
-4. Write the updated JSON back to the file
-5. **Validate**: Re-check all ID uniqueness and edge reference integrity after editing
-
-## Nodes
-
-Nodes are objects placed on the canvas. Array order determines z-index: first node = bottom layer, last node = top layer.
-
-### Generic Node Attributes
-
-| Attribute | Required | Type | Description |
-|-----------|----------|------|-------------|
-| `id` | Yes | string | Unique 16-char hex identifier |
-| `type` | Yes | string | `text`, `file`, `link`, or `group` |
-| `x` | Yes | integer | X position in pixels |
-| `y` | Yes | integer | Y position in pixels |
-| `width` | Yes | integer | Width in pixels |
-| `height` | Yes | integer | Height in pixels |
-| `color` | No | canvasColor | Preset `"1"`-`"6"` or hex (e.g., `"#FF0000"`) |
-
-### Text Nodes
-
-| Attribute | Required | Type | Description |
-|-----------|----------|------|-------------|
-| `text` | Yes | string | Plain text with Markdown syntax |
+For links to Markdown notes, use a text node whose content is solely the raw wikilink:
 
 ```json
 {
@@ -84,161 +45,74 @@ Nodes are objects placed on the canvas. Array order determines z-index: first no
   "type": "text",
   "x": 0,
   "y": 0,
-  "width": 400,
-  "height": 200,
-  "text": "# Hello World\n\nThis is **Markdown** content."
+  "width": 320,
+  "height": 90,
+  "text": "[[Entropy Generation]]"
 }
 ```
 
-**Newline pitfall**: Use `\n` for line breaks in JSON strings. Do **not** use the literal `\\n` -- Obsidian renders that as the characters `\` and `n`.
+Do not use `type: "file"` for Markdown note cards and do not add heading markers or preview prose. File nodes remain appropriate for PDFs, images, audio, and other attachments.
 
-### File Nodes
+JSON Canvas has no standard text-alignment property. Keep the raw wikilink portable; do not claim it is centered unless the active theme/CSS was verified to center it.
 
-| Attribute | Required | Type | Description |
-|-----------|----------|------|-------------|
-| `file` | Yes | string | Path to file within the system |
-| `subpath` | No | string | Link to heading or block (starts with `#`) |
+## Node-specific fields
 
-```json
-{
-  "id": "a1b2c3d4e5f67890",
-  "type": "file",
-  "x": 500,
-  "y": 0,
-  "width": 400,
-  "height": 300,
-  "file": "Attachments/diagram.png"
-}
-```
+| Type | Additional fields |
+| --- | --- |
+| `text` | `"text": "Markdown text"` |
+| `file` | `"file": "Attachments/source.pdf"`, optional `"subpath": "#page=4"` |
+| `link` | `"url": "https://example.com"` |
+| `group` | Optional `label`, `background`, and `backgroundStyle` (`cover`, `ratio`, or `repeat`) |
 
-### Link Nodes
-
-| Attribute | Required | Type | Description |
-|-----------|----------|------|-------------|
-| `url` | Yes | string | External URL |
-
-```json
-{
-  "id": "c3d4e5f678901234",
-  "type": "link",
-  "x": 1000,
-  "y": 0,
-  "width": 400,
-  "height": 200,
-  "url": "https://obsidian.md"
-}
-```
-
-### Group Nodes
-
-Groups are visual containers for organizing other nodes. Position child nodes inside the group's bounds.
-
-| Attribute | Required | Type | Description |
-|-----------|----------|------|-------------|
-| `label` | No | string | Text label for the group |
-| `background` | No | string | Path to background image |
-| `backgroundStyle` | No | string | `cover`, `ratio`, or `repeat` |
-
-```json
-{
-  "id": "d4e5f6789012345a",
-  "type": "group",
-  "x": -50,
-  "y": -50,
-  "width": 1000,
-  "height": 600,
-  "label": "Project Overview",
-  "color": "4"
-}
-```
+File paths must be vault-relative and use forward slashes. `subpath` begins with `#`. Preserve unknown fields added by Obsidian or plugins when editing an existing file.
 
 ## Edges
-
-Edges connect nodes via `fromNode` and `toNode` IDs.
-
-| Attribute | Required | Type | Default | Description |
-|-----------|----------|------|---------|-------------|
-| `id` | Yes | string | - | Unique identifier |
-| `fromNode` | Yes | string | - | Source node ID |
-| `fromSide` | No | string | - | `top`, `right`, `bottom`, or `left` |
-| `fromEnd` | No | string | `none` | `none` or `arrow` |
-| `toNode` | Yes | string | - | Target node ID |
-| `toSide` | No | string | - | `top`, `right`, `bottom`, or `left` |
-| `toEnd` | No | string | `arrow` | `none` or `arrow` |
-| `color` | No | canvasColor | - | Line color |
-| `label` | No | string | - | Text label |
 
 ```json
 {
   "id": "0123456789abcdef",
   "fromNode": "6f0ad84f44ce9c17",
   "fromSide": "right",
+  "fromEnd": "none",
   "toNode": "a1b2c3d4e5f67890",
   "toSide": "left",
   "toEnd": "arrow",
-  "label": "leads to"
+  "label": "implies",
+  "color": "5"
 }
 ```
 
-## Colors
+Valid sides are `top`, `right`, `bottom`, and `left`; valid ends are `none` and `arrow`. Omitted `fromEnd` defaults to `none`; omitted `toEnd` defaults to `arrow`.
 
-The `canvasColor` type accepts either a hex string or a preset number:
+Use labels only when direction alone does not communicate the relation. Do not rely on color alone.
 
-| Preset | Color |
-|--------|-------|
-| `"1"` | Red |
-| `"2"` | Orange |
-| `"3"` | Yellow |
-| `"4"` | Green |
-| `"5"` | Cyan |
-| `"6"` | Purple |
+## Layout
 
-Preset color values are intentionally undefined -- applications use their own brand colors.
+- Use generous spacing and a clear reading direction.
+- Derive card size from content; do not shrink text to solve crowding.
+- Keep 60–100 px padding inside groups and wider gaps between groups.
+- Avoid node overlap except deliberate containment within groups.
+- Align related nodes to a consistent grid while allowing negative coordinates.
+- Keep the single most important relationship visually dominant.
 
-## ID Generation
+For large maps, place nodes by logical layers or clusters before adding edges. Re-layout only the affected region when editing an existing Canvas unless the user requests a full redesign.
 
-Generate 16-character lowercase hexadecimal strings (64-bit random value):
+## Safe workflow
 
+1. Read and parse the existing Canvas when present.
+2. Build a semantic inventory of nodes, groups, and intended relations.
+3. Preserve all existing IDs for unchanged objects.
+4. Generate collision-free IDs only for new objects.
+5. Position additions without disrupting unrelated regions.
+6. Preserve unknown keys and established colors/layout conventions.
+7. Write valid UTF-8 JSON and run `scripts/validate_canvas.py`.
+8. Open or screenshot the Canvas in Obsidian when visual correctness matters. Syntax validation alone cannot prove legibility.
+
+## Validation
+
+```bash
+python3 scripts/validate_canvas.py path/to/map.canvas
+python3 scripts/validate_canvas.py --strict-layout path/to/map.canvas
 ```
-"6f0ad84f44ce9c17"
-"a3b2c1d0e9f8a7b6"
-```
 
-## Layout Guidelines
-
-- Coordinates can be negative (canvas extends infinitely)
-- `x` increases right, `y` increases down; position is the top-left corner
-- Space nodes 50-100px apart; leave 20-50px padding inside groups
-- Align to grid (multiples of 10 or 20) for cleaner layouts
-
-| Node Type | Suggested Width | Suggested Height |
-|-----------|-----------------|------------------|
-| Small text | 200-300 | 80-150 |
-| Medium text | 300-450 | 150-300 |
-| Large text | 400-600 | 300-500 |
-| File preview | 300-500 | 200-400 |
-| Link preview | 250-400 | 100-200 |
-
-## Validation Checklist
-
-After creating or editing a canvas file, verify:
-
-1. All `id` values are unique across both nodes and edges
-2. Every `fromNode` and `toNode` references an existing node ID
-3. Required fields are present for each node type (`text` for text nodes, `file` for file nodes, `url` for link nodes)
-4. `type` is one of: `text`, `file`, `link`, `group`
-5. `fromSide`/`toSide` values are one of: `top`, `right`, `bottom`, `left`
-6. `fromEnd`/`toEnd` values are one of: `none`, `arrow`
-7. Color presets are `"1"` through `"6"` or valid hex (e.g., `"#FF0000"`)
-8. JSON is valid and parseable
-
-If validation fails, check for duplicate IDs, dangling edge references, or malformed JSON strings (especially unescaped newlines in text content).
-
-## Complete Examples
-
-See [references/EXAMPLES.md](references/EXAMPLES.md) for full canvas examples including mind maps, project boards, research canvases, and flowcharts.
-
-## References
-
-- [JSON Canvas Spec 1.0](https://jsoncanvas.org/spec/1.0/)
-- [JSON Canvas GitHub](https://github.com/obsidianmd/jsoncanvas)
+The validator checks JSON, required fields and types, global ID uniqueness, edge references, enum values, vault-relative file paths, group z-order, Markdown-note file nodes, and optional overlap warnings. It preserves forward compatibility by warning rather than failing on unknown node types or extension fields.

@@ -36,7 +36,10 @@
 ![[document.pdf]]
 ![[document.pdf#page=3]]
 ![[document.pdf#height=400]]
+![[document.pdf#page=3&height=400]]
 ```
+
+For technical sources, keep the PDF page number in the link and state printed-page differences in surrounding prose when relevant.
 
 ## Embed Lists
 

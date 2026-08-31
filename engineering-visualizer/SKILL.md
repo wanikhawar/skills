@@ -50,6 +50,15 @@ Include what is relevant to the figure:
 
 Do not draw qualitative curves so precisely that they imply invented data. Do not omit a label when its absence makes two physically different readings possible. Keep visual styling subordinate to semantics: distinguish categories consistently, but never rely on color alone.
 
+## Obsidian rendering and accessibility
+
+- Prefer transparent backgrounds and theme-safe foregrounds so SVGs remain legible in light and dark themes.
+- Use `currentColor` or a small tested palette where practical; do not encode meaning through color alone.
+- Keep text as selectable `<text>` in SVG unless a verified font problem requires paths.
+- Include a `viewBox`, descriptive `<title>`, and adequate margins; avoid fixed canvas dimensions that clip on mobile.
+- Use notation that Obsidian's renderer can display. Mermaid labels are not a dependable substitute for MathJax-heavy equations.
+- Mermaid nodes marked `internal-link` can be clickable, but they do not create Graph-view backlinks. Add an ordinary wikilink nearby when discoverability matters.
+
 ## Author and verify
 
 1. Check the semantic brief against the governing physics before drawing.
@@ -57,6 +66,8 @@ Do not draw qualitative curves so precisely that they imply invented data. Do no
 3. Validate syntax and render when tooling permits. Inspect the rendered result, not only the source: confirm arrow direction, labels, clipping, legibility, topology, and visual hierarchy.
 4. Re-check the rendered visual against the semantic brief and the equations or prose it supports. A syntactically valid figure can still be physically false.
 5. If rendering is unavailable, do not claim visual verification. Keep the source editable, perform the semantic and syntax checks that are possible, and report the unverified render explicitly.
+
+For an SVG, use an available renderer such as `rsvg-convert` or Inkscape and inspect the rendered image. For a reproducible plot, retain the generating source only when the user authorized that additional file; otherwise report the generation method in chat.
 
 For Mermaid embedded in a note, verify the fenced block and preview it through Obsidian when practical. For SVG or a plotted attachment, use a unique descriptive filename, preserve the source needed to reproduce it, inspect the exported asset, and embed it by an unambiguous vault-relative path.
 
