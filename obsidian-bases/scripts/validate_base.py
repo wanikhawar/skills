@@ -20,22 +20,23 @@ except ImportError as exc:  # pragma: no cover - dependency failure path
 
 BUILTIN_VIEWS = {"table", "cards", "list", "map"}
 STALE_DURATION_FIELD = re.compile(
-    r"\.(?:days|hours|minutes|seconds|milliseconds)(?:\b|\()"
+    r"\)\s*\.(?:days|hours|minutes|seconds|milliseconds)\b"
 )
 FORMULA_REF = re.compile(r"\bformula\.([A-Za-z_][A-Za-z0-9_-]*)\b")
 
 
-def iter_strings(value):
+def filter_expressions(value):
     if isinstance(value, str):
         yield value
-    elif isinstance(value, list):
-        for item in value:
-            yield from iter_strings(item)
     elif isinstance(value, dict):
-        for key, item in value.items():
-            if isinstance(key, str):
-                yield key
-            yield from iter_strings(item)
+        for children in value.values():
+            if isinstance(children, list):
+                for child in children:
+                    yield from filter_expressions(child)
+
+
+def without_string_literals(expression):
+    return re.sub(r"\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'", "", expression)
 
 
 def validate_filter(value, location, errors):
@@ -119,18 +120,45 @@ def validate(path: Path):
             else:
                 if not isinstance(group_by.get("property"), str):
                     errors.append(f"{where}.groupBy.property: must be a property name")
-                if group_by.get("direction") not in {"ASC", "DESC"}:
+                if group_by.get("direction") not in ("ASC", "DESC"):
                     errors.append(f"{where}.groupBy.direction: must be ASC or DESC")
 
     defined = set(formulas)
-    for expression in iter_strings(data):
+    expressions = [v for v in formulas.values() if isinstance(v, str)]
+    summaries = data.get("summaries", {})
+    if isinstance(summaries, dict):
+        expressions.extend(v for v in summaries.values() if isinstance(v, str))
+    expressions.extend(filter_expressions(data.get("filters")))
+    property_refs = []
+    properties = data.get("properties", {})
+    if isinstance(properties, dict):
+        property_refs.extend(k for k in properties if isinstance(k, str))
+    for view in views:
+        if not isinstance(view, dict):
+            continue
+        expressions.extend(filter_expressions(view.get("filters")))
+        order = view.get("order", [])
+        if isinstance(order, list):
+            property_refs.extend(v for v in order if isinstance(v, str))
+        group = view.get("groupBy")
+        if isinstance(group, dict) and isinstance(group.get("property"), str):
+            property_refs.append(group["property"])
+        view_summaries = view.get("summaries", {})
+        if isinstance(view_summaries, dict):
+            property_refs.extend(k for k in view_summaries if isinstance(k, str))
+
+    for expression in map(without_string_literals, expressions):
         for referenced in FORMULA_REF.findall(expression):
             if referenced not in defined:
                 errors.append(f"undefined formula reference: formula.{referenced}")
         if STALE_DURATION_FIELD.search(expression):
-            errors.append(
-                "stale duration-field syntax found; date subtraction returns milliseconds"
+            warnings.append(
+                "possible stale duration-field syntax; if applied to date subtraction, "
+                "convert milliseconds instead (formula execution was not checked)"
             )
+    for reference in property_refs:
+        if reference.startswith("formula.") and reference[8:] not in defined:
+            errors.append(f"undefined formula reference: {reference}")
 
     if path.suffix != ".base":
         warnings.append("file does not use the .base extension")

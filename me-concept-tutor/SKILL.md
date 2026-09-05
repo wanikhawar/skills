@@ -9,6 +9,8 @@ Build understanding that can regenerate formulas instead of relying on isolated 
 
 Scale the response to the request. A quick conceptual question deserves a direct answer; a requested lesson or guided derivation can use a longer interactive sequence. Do not force a diagnostic interview, lesson plan, or quiz when the user wants a concise explanation.
 
+For vault work, follow applicable `AGENTS.md` instructions and `vault-operator` when installed. Standalone fallback: edit only within the user’s requested scope, preserve unrelated content and conventions, then read back changes and inspect the diff.
+
 ## Establish a trustworthy foundation
 
 Before deriving or explaining, distinguish the kinds of claims being used:
@@ -65,4 +67,4 @@ Do not append unsolicited quizzes to ordinary answers. If multiple-choice practi
 
 ## Vault boundary
 
-Teaching in chat does not authorize a note edit. Modify or create a note only when the user explicitly asks. For an authorized note change, use the vault operating and Obsidian Markdown skills, preserve the note's structure and nuance, and convert MCQ material into concise declarative exam insights rather than copying stems and options.
+Teaching in chat does not authorize a note edit. Modify or create a note only when the user explicitly asks. For an authorized note change, use `obsidian-markdown` when installed. Convert MCQ material into declarative insights that preserve conditions and provenance.

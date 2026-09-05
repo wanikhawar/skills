@@ -18,8 +18,8 @@ HEX_COLOR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
 def valid_color(value):
-    return value in {"1", "2", "3", "4", "5", "6"} or (
-        isinstance(value, str) and bool(HEX_COLOR.fullmatch(value))
+    return isinstance(value, str) and (
+        value in {"1", "2", "3", "4", "5", "6"} or bool(HEX_COLOR.fullmatch(value))
     )
 
 
@@ -68,10 +68,13 @@ def validate(path: Path, strict_layout=False):
             if not HEX_ID.fullmatch(node_id):
                 warnings.append(f"{where}: id is valid but not the local 16-hex convention")
         node_type = node.get("type")
-        if node_type not in NODE_TYPES:
+        if not isinstance(node_type, str) or not node_type:
+            errors.append(f"{where}: type must be a non-empty string")
+            node_type = None
+        elif node_type not in NODE_TYPES:
             warnings.append(f"{where}: unknown node type {node_type!r}; verify its extension")
         for key in ("x", "y", "width", "height"):
-            if not isinstance(node.get(key), int):
+            if type(node.get(key)) is not int:
                 errors.append(f"{where}: {key} must be an integer")
         if isinstance(node.get("width"), int) and node["width"] <= 0:
             errors.append(f"{where}: width must be positive")
@@ -98,11 +101,11 @@ def validate(path: Path, strict_layout=False):
             not isinstance(node["subpath"], str) or not node["subpath"].startswith("#")
         ):
             errors.append(f"{where}: subpath must be a string beginning with #")
-        if node_type == "group" and "backgroundStyle" in node and node["backgroundStyle"] not in {
+        if node_type == "group" and "backgroundStyle" in node and node["backgroundStyle"] not in (
             "cover",
             "ratio",
             "repeat",
-        }:
+        ):
             errors.append(f"{where}: invalid backgroundStyle {node['backgroundStyle']!r}")
         if all(isinstance(node.get(k), int) for k in ("x", "y", "width", "height")):
             valid_nodes.append((index, node))
@@ -122,13 +125,13 @@ def validate(path: Path, strict_layout=False):
             if not HEX_ID.fullmatch(edge_id):
                 warnings.append(f"{where}: id is valid but not the local 16-hex convention")
         for key in ("fromNode", "toNode"):
-            if edge.get(key) not in node_ids:
+            if not isinstance(edge.get(key), str) or edge[key] not in node_ids:
                 errors.append(f"{where}: {key} does not reference an existing node")
         for key in ("fromSide", "toSide"):
-            if key in edge and edge[key] not in SIDES:
+            if key in edge and (not isinstance(edge[key], str) or edge[key] not in SIDES):
                 errors.append(f"{where}: invalid {key} {edge[key]!r}")
         for key in ("fromEnd", "toEnd"):
-            if key in edge and edge[key] not in ENDS:
+            if key in edge and (not isinstance(edge[key], str) or edge[key] not in ENDS):
                 errors.append(f"{where}: invalid {key} {edge[key]!r}")
         if "color" in edge and not valid_color(edge["color"]):
             errors.append(f"{where}: color must be a preset 1-6 or #RRGGBB")

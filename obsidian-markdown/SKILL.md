@@ -15,6 +15,18 @@ Read supporting references only when needed:
 - [references/EMBEDS.md](references/EMBEDS.md) for note, image, audio, PDF, and query embeds.
 - [references/CALLOUTS.md](references/CALLOUTS.md) for callout types and nesting.
 
+For vault work, follow applicable `AGENTS.md` instructions and `vault-operator` when installed. Standalone fallback: edit only within the user’s requested scope, preserve unrelated content and conventions, then read back changes and inspect the diff.
+
+## Helper paths and dependencies
+
+Resolve the directory containing this loaded `SKILL.md` to an absolute path. In the commands below, set `skill_dir` to that directory; the example value is a placeholder. Keep the working directory unchanged so relative input and output paths retain their meaning in the user’s workspace. Quote all paths.
+
+```bash
+skill_dir="/absolute/path/to/obsidian-markdown"
+```
+
+The validator requires Python 3 and PyYAML. Check the selected interpreter with `python3 -c "import yaml"`. If unavailable, use an existing environment containing PyYAML or report the missing dependency; do not claim the validator ran. Install dependencies only within the user-authorized scope.
+
 ## Authorization and workflow
 
 An active note, linked note, selection, or supplied source is context only. Modify or create a note only when the user explicitly requests that vault change.
@@ -23,9 +35,9 @@ For an authorized edit:
 
 1. Read the target and inspect nearby notes only when needed to learn local conventions.
 2. Preserve frontmatter and property types. Do not add `title`, tags, aliases, dates, or a template merely because they are available.
-3. Make the smallest coherent change. Preserve block IDs, links, embeds, equations, and unique nuance.
+3. Preserve block IDs, links, embeds, equations, and unique nuance.
 4. Resolve new internal links to real targets where practical.
-5. Run `scripts/validate_note.py`, read the result back, and inspect the diff.
+5. Run the bundled Markdown validator using the invocation below.
 6. Preview in Obsidian when the task depends on rendering, CSS, Mermaid, embeds, or plugin behavior.
 
 ## Internal links
@@ -138,7 +150,7 @@ For clickable vault notes, Obsidian supports the `internal-link` class. Mermaid 
 Run:
 
 ```bash
-python3 scripts/validate_note.py path/to/note.md
+python3 "$skill_dir/scripts/validate_note.py" "path/to/note.md"
 ```
 
 The validator checks frontmatter parsing, fence balance, dollar-display delimiters, bracket-style display math, wikilink balance, and Markdown table structure. Warnings require judgment; a clean static check does not replace an Obsidian preview.

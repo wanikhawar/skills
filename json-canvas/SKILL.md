@@ -11,6 +11,18 @@ Use the open [JSON Canvas 1.0 specification](https://jsoncanvas.org/spec/1.0/) w
 
 Read [references/EXAMPLES.md](references/EXAMPLES.md) only when a complete layout example is useful.
 
+For vault work, follow applicable `AGENTS.md` instructions and `vault-operator` when installed. Standalone fallback: edit only within the user’s requested scope, preserve unrelated content and conventions, then read back changes and inspect the diff.
+
+## Helper paths and dependencies
+
+Resolve the directory containing this loaded `SKILL.md` to an absolute path. In the commands below, set `skill_dir` to that directory; the example value is a placeholder. Keep the working directory unchanged so relative input and output paths retain their meaning in the user’s workspace. Quote all paths.
+
+```bash
+skill_dir="/absolute/path/to/json-canvas"
+```
+
+The helper uses Python 3 and its standard library.
+
 ## Choose Canvas deliberately
 
 Use Canvas for spatial exploration, movable clusters, relationship maps, research boards, or user-requested visual navigation. Prefer:
@@ -111,8 +123,8 @@ For large maps, place nodes by logical layers or clusters before adding edges. R
 ## Validation
 
 ```bash
-python3 scripts/validate_canvas.py path/to/map.canvas
-python3 scripts/validate_canvas.py --strict-layout path/to/map.canvas
+python3 "$skill_dir/scripts/validate_canvas.py" "path/to/map.canvas"
+python3 "$skill_dir/scripts/validate_canvas.py" --strict-layout "path/to/map.canvas"
 ```
 
 The validator checks JSON, required fields and types, global ID uniqueness, edge references, enum values, vault-relative file paths, group z-order, Markdown-note file nodes, and optional overlap warnings. It preserves forward compatibility by warning rather than failing on unknown node types or extension fields.

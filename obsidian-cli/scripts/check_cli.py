@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -38,14 +40,30 @@ def is_gui_wrapper(path: Path) -> bool:
     return "electron" in lowered and "app.asar" in lowered
 
 
+def recognizable_version(output: str) -> bool:
+    return bool(re.fullmatch(
+        r"(?:Obsidian\s+)?\d+\.\d+(?:\.\d+)?(?:[-+][\w.-]+)?"
+        r"(?:\s+\(installer\s+[^\n()]+\))?", output.strip(), re.I
+    ))
+
+
+def recognizable_help(output: str) -> bool:
+    # Require Obsidian identity plus several command entries, not arbitrary logs.
+    commands = re.findall(r"^\s*(read|search|vault)\b", output, re.M)
+    return "obsidian" in output.lower() and len(set(commands)) == 3
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.parse_args()
+    parser.add_argument("--json", action="store_true", help="emit the verified executable path as JSON")
+    args = parser.parse_args()
+    def diagnostic(message):
+        print(message, file=sys.stderr if args.json else sys.stdout)
     for path in candidates():
         if not path.is_file() or not os.access(path, os.X_OK):
             continue
         if is_gui_wrapper(path):
-            print(f"SKIP GUI wrapper: {path}")
+            diagnostic(f"SKIP GUI wrapper: {path}")
             continue
         try:
             result = subprocess.run(
@@ -55,14 +73,30 @@ def main() -> int:
                 timeout=5,
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
-            print(f"SKIP unusable candidate {path}: {exc}")
+            diagnostic(f"SKIP unusable candidate {path}: {exc}")
             continue
         output = (result.stdout or result.stderr).strip()
-        if result.returncode == 0 and output:
-            print(f"CLI {path}: {output}")
-            return 0
-        print(f"SKIP non-CLI candidate {path}: exit {result.returncode}")
-    print(
+        if result.returncode != 0 or not recognizable_version(output):
+            diagnostic(f"SKIP non-CLI candidate {path}: unrecognized version response")
+            continue
+        try:
+            help_result = subprocess.run(
+                [str(path), "help"], text=True, capture_output=True, timeout=5
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            diagnostic(f"SKIP unusable help response {path}: {exc}")
+            continue
+        if help_result.returncode != 0 or not recognizable_help(help_result.stdout):
+            diagnostic(f"SKIP non-CLI candidate {path}: unrecognized help response")
+            continue
+        # Preserve the tested invocation path, including a registered symlink.
+        executable = str(path.absolute())
+        if args.json:
+            print(json.dumps({"executable": executable, "version": output}))
+        else:
+            print(f"CLI {executable}: {output}")
+        return 0
+    diagnostic(
         "Obsidian CLI unavailable. Enable Settings → General → Command line interface; "
         "on Linux ensure ~/.local/bin precedes the GUI launcher in PATH."
     )

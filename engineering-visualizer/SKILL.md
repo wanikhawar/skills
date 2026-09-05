@@ -9,6 +9,8 @@ Make one visual communicate one technical claim. A visual earns its place only w
 
 Do not create a decorative illustration that merely repeats the surrounding sentence. Reduce the brief to the fewest elements that carry the claim; if removing an element leaves the claim intact, remove it.
 
+For vault work, follow applicable `AGENTS.md` instructions and `vault-operator` when installed. Standalone fallback: edit only within the user’s requested scope, preserve unrelated content and conventions, then read back changes and inspect the diff.
+
 ## Choose the representation
 
 Use the simplest editable, version-control-friendly form that preserves the needed meaning:
@@ -67,20 +69,20 @@ Do not draw qualitative curves so precisely that they imply invented data. Do no
 4. Re-check the rendered visual against the semantic brief and the equations or prose it supports. A syntactically valid figure can still be physically false.
 5. If rendering is unavailable, do not claim visual verification. Keep the source editable, perform the semantic and syntax checks that are possible, and report the unverified render explicitly.
 
-For an SVG, use an available renderer such as `rsvg-convert` or Inkscape and inspect the rendered image. For a reproducible plot, retain the generating source only when the user authorized that additional file; otherwise report the generation method in chat.
+For an SVG, use an available renderer such as `rsvg-convert` or Inkscape and inspect the rendered image. Generate and inspect plots using temporary source files outside the vault. Keep those files through verification. Save plotting code or data persistently when the user requests reproducible/editable source or an established deliverable convention includes it; saving source alongside an exported figure is then part of that authorized work. Otherwise deliver the requested visual and describe its generation method in chat, without adding source files to the vault. An SVG itself is editable source.
 
-For Mermaid embedded in a note, verify the fenced block and preview it through Obsidian when practical. For SVG or a plotted attachment, use a unique descriptive filename, preserve the source needed to reproduce it, inspect the exported asset, and embed it by an unambiguous vault-relative path.
+For Mermaid embedded in a note, verify the fenced block and preview it through Obsidian when practical. For SVG or a plotted attachment, use a unique descriptive filename, apply the source-retention rule above, inspect the exported asset, and embed it by an unambiguous vault-relative path.
 
 ## Place it in Obsidian
 
-Creating a visual in chat does not authorize writing it to the vault. Save or embed it only when the user explicitly asks for a note or canvas change.
+Creating a visual in chat does not authorize writing it to the vault. Save or embed it in the vault when the user requests that visual as an attachment or as part of a note/canvas change. A request to add a figure includes its necessary exported attachment and embed; unrelated assets and persistent plotting source follow their own scope.
 
 For an authorized edit:
 
-- use the vault operating protocol and the relevant Obsidian Markdown or JSON Canvas skill;
+- use `obsidian-markdown` or `json-canvas` when installed for the selected output format;
 - follow the target note's existing attachment convention, or inspect nearby notes and Obsidian settings before choosing a new location;
 - introduce the figure with one sentence stating what to notice;
 - let the figure carry the spatial or relational information instead of narrating every label again;
-- read back the changed note, check the embed target, and verify that no unrelated content changed.
+- check the embed target and apply the shared vault validation contract.
 
 When adapting a supplied figure without adding the image itself, extract its technically meaningful labels, directions, regions, comparisons, table entries, and caption qualifications into the replacement visual or surrounding explanation.

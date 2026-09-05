@@ -18,6 +18,18 @@ Current documentation:
 
 Read [references/FUNCTIONS_REFERENCE.md](references/FUNCTIONS_REFERENCE.md) only when authoring or debugging formulas.
 
+For vault work, follow applicable `AGENTS.md` instructions and `vault-operator` when installed. Standalone fallback: edit only within the user’s requested scope, preserve unrelated content and conventions, then read back changes and inspect the diff.
+
+## Helper paths and dependencies
+
+Resolve the directory containing this loaded `SKILL.md` to an absolute path. In the commands below, set `skill_dir` to that directory; the example value is a placeholder. Keep the working directory unchanged so relative input and output paths retain their meaning in the user’s workspace. Quote all paths.
+
+```bash
+skill_dir="/absolute/path/to/obsidian-bases"
+```
+
+The validator requires Python 3 and PyYAML. Check the selected interpreter with `python3 -c "import yaml"`. If unavailable, use an existing environment containing PyYAML or report the missing dependency; do not claim the validator ran. Install dependencies only within the user-authorized scope.
+
 ## Workflow
 
 1. Confirm the user requested a Base or `.base` change. A Base shown as context is not permission to edit it.
@@ -136,16 +148,15 @@ views:
 Run:
 
 ```bash
-python3 scripts/validate_base.py path/to/file.base
+python3 "$skill_dir/scripts/validate_base.py" "path/to/file.base"
 ```
 
-The validator checks YAML structure, filter shape, view names, formula references, and known stale date-duration patterns. It cannot execute the Obsidian formula engine.
+The validator checks YAML structure, filter shape, view names, and formula references in known expression/property fields. It ignores quoted expression literals and descriptive labels. Suspicious duration-field access produces a warning because static checks cannot determine the receiver type. It cannot execute the Obsidian formula engine.
 
 After an authorized edit:
 
-- read the file back;
 - confirm every displayed `formula.X` is defined;
 - confirm source properties exist with compatible types;
 - query each important view through the CLI when available;
 - preview cards/maps when visual layout matters;
-- inspect the diff for unrelated changes.
+- apply the shared vault validation contract (or the standalone fallback above).

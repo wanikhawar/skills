@@ -8,7 +8,7 @@ metadata:
 
 # Vault Operator
 
-Use this as the shared operating policy for work on Khawar's Obsidian vault. Load the specialized format or domain skill only when the task needs it.
+Use this as the collection’s shared operating policy for vault work. Applicable `AGENTS.md` instructions and explicit user instructions govern; the rules below provide the portable fallback when this skill is installed elsewhere. Specialized skills should reference this policy and retain only a short standalone fallback plus their domain-specific requirements. Load a specialized format or domain skill only when the task needs it.
 
 ## Authorization boundary
 

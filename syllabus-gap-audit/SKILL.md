@@ -10,6 +10,8 @@ metadata:
 
 Compare the requested vault scope against the current official syllabus for the exact exams, posts, and recruitment cycles in scope. Search hits are candidates for inspection, not proof of coverage.
 
+For vault work, follow applicable `AGENTS.md` instructions and `vault-operator` when installed. Standalone fallback: edit only within the user’s requested scope, preserve unrelated content and conventions, then read back changes and inspect the diff.
+
 ## Modes and authorization
 
 - **Audit:** collect sources, normalize requirements, inspect vault coverage, and report gaps. This is the default.
@@ -18,7 +20,7 @@ Compare the requested vault scope against the current official syllabus for the 
 
 An audit request alone does not authorize note creation or modification. An active note, folder, or MOC is context only.
 
-Load:
+Load these companion skills when installed and relevant:
 
 - `vault-operator` for path resolution, consent, safe edits, and validation;
 - `obsidian-markdown` for authorized note changes;
@@ -26,7 +28,7 @@ Load:
 - `me-concept-tutor` when filling a gap requires a derivation or technically deep explanation;
 - `engineering-visualizer` only when a visual materially improves a missing concept.
 
-Do not reference unavailable generic skills or expand into lectures, research papers, OCR, or dashboards unless the task requires them.
+If a companion skill is unavailable, use available tools with the standalone policy above, exact path resolution, source/page evidence, and the technical checks below. Report unavailable validation rather than claiming it succeeded. Do not expand into lectures, research papers, OCR, or dashboards unless the task requires them.
 
 ## Establish exact scope
 
@@ -70,12 +72,12 @@ Do not use search snippets, coaching answer pages, or copied answer keys as syll
 Create an exam-useful matrix at the smallest granularity supported by the official wording:
 
 ```text
-Area | Official topic/subtopic | Exam/post | Cycle | Source page/section | Required depth | Vault evidence | Status | Priority | Action
+Area | Official topic/subtopic | Exam/post | Cycle | Source page/section | Officially stated depth | Inferred preparation depth + evidence | Vault evidence | Coverage | Correctness | Navigation | Priority | Action
 ```
 
 Common Mechanical Engineering areas include mathematics, engineering mechanics, strength of materials, theory of machines/vibrations, design, fluids/hydraulic machines, thermodynamics, heat transfer, RAC, power/engines/turbomachinery, materials/metallurgy, manufacturing, metrology, industrial engineering/OR, drawing/CAD, and exam-specific aptitude or general awareness.
 
-Do not force every exam into the same granularity. Preserve differences in wording, breadth, and expected depth.
+Do not force every exam into the same granularity. Preserve differences in wording and breadth. Record officially stated depth only when the source specifies it; otherwise write “not specified.” Keep inferred preparation depth separate and cite its basis, such as an inspected official sample question or identified PYQ. Label judgment as inference; leave depth unresolved when evidence is insufficient.
 
 ## Audit the vault
 
@@ -87,23 +89,21 @@ Do not force every exam into the same granularity. Preserve differences in wordi
 6. Record the exact note and heading that provide evidence.
 7. Check discoverability through MOC links when navigation is in scope.
 
-Use these statuses:
+Assess each dimension independently:
 
-| Status | Evidence standard |
+| Dimension | Values and evidence standard |
 | --- | --- |
-| Covered | Correct, usable exam coverage with relevant definitions, equations/conditions, or classifications. |
-| Partial | Topic exists but lacks a required relation, assumption, case, classification, or exam-relevant distinction. |
-| Scattered | Useful coverage exists but has no clear authoritative anchor or navigation path. |
-| Missing | No useful content after synonym and content inspection. |
-| Wrong/Risky | Existing content is materially incorrect, misleading, unverified, or missing a critical validity condition. |
+| Coverage | **Complete:** all in-scope requirements have usable content. **Partial:** some required content is absent. **Missing:** no useful content after synonym and content inspection. **Not assessed:** inspection is incomplete or scope is unresolved. |
+| Correctness | **Verified:** the relevant content passed the technical checks below. **Uncertain:** evidence or verification is insufficient. **Incorrect:** a specific error or missing critical validity condition is demonstrated. |
+| Navigation | **Anchored:** coverage has a clear authoritative note/section and, when in scope, a working MOC path. **Scattered:** relevant material is distributed without a clear anchor. Use **Not assessed** when navigation is out of scope or no content exists. |
 
-A matching filename, tag, or isolated keyword is never sufficient evidence for `Covered`.
+A topic can be complete, verified, and scattered. Complete coverage is not proof of correctness. Use correctness “Uncertain” for missing or uninspected content, explaining that there was nothing to verify; never label unreviewed material incorrect. Record exact note/heading evidence and reasons for each judgment. A matching filename, tag, or keyword cannot establish complete coverage.
 
 ## Prioritize transparently
 
 Priority must follow the user's target exams and documented evidence. Explain each priority rather than applying a universal score.
 
-- **High:** a whole required area is absent, a wrong/risky concept affects many problems, or a topic is central to several target exams.
+- **High:** a whole required area is absent, a demonstrated incorrect concept affects many problems, or a topic is central to several target exams.
 - **Medium:** a required subtopic or qualification is missing from otherwise useful notes.
 - **Low:** peripheral, post-specific, or low-depth material for the current target, unless the user prioritizes that exam/post.
 
@@ -121,7 +121,7 @@ Choose the least disruptive home:
 
 Inspect nearby notes before choosing headings, frontmatter, tags, callouts, or filename style. Do not apply a universal template or tag every note with every exam. Add only properties that match the local schema and the exams actually relevant to that note.
 
-When incorporating an official syllabus or supplied material, preserve every distinct correct definition, statement, equation, condition, comparison, qualification, and technically meaningful figure/table/caption detail that falls within scope. Consolidate duplicates without losing nuance.
+For source incorporation, use the shared completeness contract. Standalone fallback: retain every distinct correct in-scope point, including meaningful figures/tables, and consolidate duplicates without losing qualifications.
 
 For a large authorized audit, work in reviewable phases: sources and matrix, vault coverage, high-priority corrections, medium-priority coverage, then navigation cleanup. Explicit permission for a complete bulk edit is sufficient; otherwise pause before a mutation set whose scope cannot be safely reviewed.
 
@@ -135,7 +135,7 @@ Before saving substantive engineering content:
 - distinguish official syllabus evidence from textbook support for technical content;
 - mark unresolved empirical claims as unverified instead of guessing.
 
-Use `$...$` and `$$...$$`, never `\[...\]`. Convert MCQs into declarative exam insights rather than copying stems/options.
+Follow `obsidian-markdown` for math and note syntax when installed. Standalone fallback: use `$...$` and `$$...$$`; convert MCQs into declarative insights with conditions and provenance.
 
 ## Report
 
@@ -149,8 +149,8 @@ Include:
 
 ## Coverage
 
-| Official topic | Vault evidence | Status | Priority | Recommended action |
-| --- | --- | --- | --- | --- |
+| Official topic | Vault evidence | Coverage | Correctness | Navigation | Priority | Recommended action |
+| --- | --- | --- | --- | --- | --- | --- |
 
 ## Changes made
 
@@ -162,6 +162,6 @@ Include:
 - ...
 ```
 
-For incorporation edits, separately report what was added/expanded, consolidated, and corrected/omitted with reasons. Say explicitly when nothing was omitted.
+For incorporation edits, use the shared reporting contract. Standalone fallback: report additions, consolidation, and corrections/omissions with reasons, including when none were omitted.
 
-After edits, run the Markdown validator, read every changed note back, check new links, inspect the owning Git diff, and distinguish static validation from actual Obsidian preview.
+After edits, apply the shared validation contract. Run the Markdown validator when installed and check new links; distinguish static validation from an actual Obsidian preview.

@@ -34,12 +34,34 @@ def strip_fenced_blocks(lines):
         else:
             char, length, _ = opener
             stripped = line.lstrip()
-            if stripped.startswith(char * length):
-                run = len(stripped) - len(stripped.lstrip(char))
-                if run >= length:
-                    opener = None
+            if re.fullmatch(re.escape(char) + "{" + str(length) + r",}\s*", stripped):
+                opener = None
             visible.append("")
     return visible, opener
+
+
+def strip_inline_code(text):
+    """Mask matched equal-length backtick runs, preserving line positions."""
+    runs = list(re.finditer(r"`+", text))
+    result = list(text)
+    index = 0
+    while index < len(runs):
+        opening = runs[index]
+        # An escaped backtick outside a code span does not open one.
+        prefix = text[:opening.start()]
+        if (len(prefix) - len(prefix.rstrip("\\"))) % 2:
+            index += 1
+            continue
+        closing = next((j for j in range(index + 1, len(runs))
+                        if len(runs[j].group()) == len(opening.group())), None)
+        if closing is None:
+            index += 1
+            continue
+        for position in range(opening.start(), runs[closing].end()):
+            if result[position] != "\n":
+                result[position] = " "
+        index = closing + 1
+    return "".join(result)
 
 
 def unescaped_pipe_count(line):
@@ -81,7 +103,7 @@ def validate(path: Path):
     visible, open_fence = strip_fenced_blocks(lines[body_start:])
     if open_fence:
         errors.append(f"unclosed code fence beginning near body line {open_fence[2]}")
-    visible_text = "\n".join(visible)
+    visible_text = strip_inline_code("\n".join(visible))
 
     if "\\[" in visible_text or "\\]" in visible_text:
         errors.append("bracket-delimited display math found; use $$ delimiters")

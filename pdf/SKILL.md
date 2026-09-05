@@ -10,9 +10,21 @@ metadata:
 
 Choose the operation from the user's requested outcome, inspect the input before transforming it, and validate the output both structurally and visually.
 
-The bundled `scripts/pdf_ops.py` uses PyMuPDF for inspection, text extraction, and rendering, and pypdf for page-level structural edits. It contains PEP 723 dependency metadata, so `uv run` resolves its Python dependencies reproducibly.
+The bundled `scripts/pdf_ops.py` uses PyMuPDF for inspection, text extraction, and rendering, and pypdf for page-level structural edits. It contains PEP 723 dependency metadata, so `uv run` resolves its declared dependency ranges in a managed environment. These ranges are not a lockfile: different runs may select different compatible versions.
 
 Read [references/WORKFLOWS.md](references/WORKFLOWS.md) only for OCR, tables, creation, forms, passwords, or Obsidian-ingestion details.
+
+For vault work, follow applicable `AGENTS.md` instructions and `vault-operator` when installed. Standalone fallback: edit only within the user’s requested scope, preserve unrelated content and conventions, then read back changes and inspect the diff.
+
+## Helper paths and dependencies
+
+Resolve the directory containing this loaded `SKILL.md` to an absolute path. In the commands below, set `skill_dir` to that directory; the example value is a placeholder. Keep the working directory unchanged so relative input and output paths retain their meaning in the user’s workspace. Quote all paths.
+
+```bash
+skill_dir="/absolute/path/to/pdf"
+```
+
+The helper requires `uv` and Python 3.11 or later; `pdfinfo` is a separate Poppler utility. Check availability before relying on them. `uv run` may download Python packages into its managed environment. Follow the user’s dependency-installation scope; if unavailable, use suitable existing tools and report which checks could not run.
 
 ## Authorization and safety
 
@@ -27,7 +39,7 @@ Read [references/WORKFLOWS.md](references/WORKFLOWS.md) only for OCR, tables, cr
 Inspect first:
 
 ```bash
-uv run scripts/pdf_ops.py inspect "input.pdf"
+uv run "$skill_dir/scripts/pdf_ops.py" inspect "input.pdf"
 pdfinfo "input.pdf"
 ```
 
@@ -45,37 +57,37 @@ For a source-specific request, retain PDF page numbers. Printed page numbers may
 Extract page-aware text to standard output:
 
 ```bash
-uv run scripts/pdf_ops.py extract "input.pdf" --pages "1,3-5"
+uv run "$skill_dir/scripts/pdf_ops.py" extract "input.pdf" --pages "1,3-5"
 ```
 
 Write extracted Markdown explicitly:
 
 ```bash
-uv run scripts/pdf_ops.py extract "input.pdf" --output "extracted.md"
+uv run "$skill_dir/scripts/pdf_ops.py" extract "input.pdf" --output "extracted.md"
 ```
 
 Render pages for visual inspection:
 
 ```bash
-uv run scripts/pdf_ops.py render "input.pdf" "/tmp/rendered-pages" --pages "1-3" --dpi 160
+uv run "$skill_dir/scripts/pdf_ops.py" render "input.pdf" "/tmp/rendered-pages" --pages "1-3" --dpi 160
 ```
 
 Merge in the given order:
 
 ```bash
-uv run scripts/pdf_ops.py merge "merged.pdf" "part-1.pdf" "part-2.pdf"
+uv run "$skill_dir/scripts/pdf_ops.py" merge "merged.pdf" "part-1.pdf" "part-2.pdf"
 ```
 
 Extract selected pages into a new PDF:
 
 ```bash
-uv run scripts/pdf_ops.py extract-pages "input.pdf" "selected.pdf" --pages "1-4,9"
+uv run "$skill_dir/scripts/pdf_ops.py" extract-pages "input.pdf" "selected.pdf" --pages "1-4,9"
 ```
 
 Rotate selected pages clockwise:
 
 ```bash
-uv run scripts/pdf_ops.py rotate "input.pdf" "rotated.pdf" --pages "2,4" --degrees 90
+uv run "$skill_dir/scripts/pdf_ops.py" rotate "input.pdf" "rotated.pdf" --pages "2,4" --degrees 90
 ```
 
 Every write command refuses an existing output unless `--overwrite` is supplied. Add that flag only under explicit overwrite authorization.
@@ -91,7 +103,7 @@ Text extraction alone is insufficient for a technical PDF. When relevant:
 5. distinguish OCR uncertainty from source ambiguity;
 6. verify any empirical value before incorporating it into a study note.
 
-When the user explicitly asks to incorporate a PDF into a note, include every distinct, technically correct in-scope statement, equation, condition, comparison, and meaningful figure/table/caption detail. Consolidate true duplicates without losing nuance. Report added/expanded, consolidated, and corrected/omitted material separately.
+For note incorporation, use the shared policy’s completeness and reporting contract. Standalone fallback: preserve every distinct correct in-scope point, including meaningful figures/tables; consolidate duplicates without losing qualifications, and report additions, consolidation, and omissions/corrections with reasons.
 
 ## OCR
 
@@ -103,7 +115,6 @@ Never assume OCR is accurate for subscripts, Greek letters, signs, decimals, equ
 
 For an authorized vault change:
 
-- follow the vault attachment convention;
 - use an unambiguous vault-relative embed such as `![[Sources/file.pdf#page=12]]`;
 - cite exact page ranges in surrounding prose when claims come from the PDF;
 - avoid duplicating a large extracted text dump inside a polished concept note;
