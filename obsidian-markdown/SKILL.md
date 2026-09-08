@@ -25,7 +25,17 @@ Resolve the directory containing this loaded `SKILL.md` to an absolute path. In 
 skill_dir="/absolute/path/to/obsidian-markdown"
 ```
 
-The validator requires Python 3 and PyYAML. Check the selected interpreter with `python3 -c "import yaml"`. If unavailable, use an existing environment containing PyYAML or report the missing dependency; do not claim the validator ran. Install dependencies only within the user-authorized scope.
+Use the compiled Rust validator below; it accepts multiple files in one invocation. Ordinary frontmatter needs no Python. Uncommon YAML tags, aliases, complex keys, or parser disagreements use Python 3/PyYAML for compatibility. If that fallback is unavailable, the check reports an error; do not claim validation succeeded.
+
+The release binaries `vault-check` and `vault` are built once per machine (and rebuilt after source changes):
+
+```bash
+cargo build --release --locked --manifest-path "$skill_dir/scripts/vault-check/Cargo.toml"
+```
+
+Both binaries must remain in the same directory because `vault check` invokes its sibling `vault-check`. Install both into `~/.local/bin`; they do not need to remain linked to Cargo's generated `target/` directory.
+
+Run the existing binary directly during routine edits; do not run Cargo or check Python dependencies each time. Source and locked dependencies live in `scripts/vault-check/`. If Rust cannot be built, the retained `scripts/validate_note.py` is a fallback requiring Python 3 and PyYAML. Report which fallback was used.
 
 ## Authorization and workflow
 
@@ -147,10 +157,34 @@ For clickable vault notes, Obsidian supports the `internal-link` class. Mermaid 
 
 ## Validation
 
-Run:
+For files inside a vault, prefer the workflow CLI, which adds embedded-file checks to the existing syntax validator:
 
 ```bash
-python3 "$skill_dir/scripts/validate_note.py" "path/to/note.md"
+vault check --quiet -- "path/to/note.md"
 ```
 
+Pass the exact edited files together. Use `vault check --changed --quiet` only for a session-wide check; it includes staged, unstaged and untracked notes in the vault's owning Git repository, excluding hidden paths and deletions, without inspecting nested repositories. Root selection and static embed-check limitations are documented in `vault-operator`. If `vault` is not on PATH, invoke `"$skill_dir/scripts/vault-check/target/release/vault"` directly. Exit 1 includes missing/ambiguous embedded files; exit 2 is a usage/operational error. Heading and block fragments are not checked.
+
+For standalone files, syntax-only checks, or when the workflow CLI is unavailable, run:
+
+```bash
+"$skill_dir/scripts/vault-check/target/release/vault-check" note --quiet "path/to/note.md"
+```
+
+`--quiet` suppresses OK lines, retaining warnings/errors; exit 0 means no errors, 1 means validation/read errors, and 2 means invalid arguments. Pass all changed notes together; use `--` before filenames beginning with `-`.
+
 The validator checks frontmatter parsing, fence balance, dollar-display delimiters, bracket-style display math, wikilink balance, and Markdown table structure. Warnings require judgment; a clean static check does not replace an Obsidian preview.
+
+### Preservation after incorporation or reorganization
+
+Before editing, save the current note to a unique temporary file outside the vault (for example, `mktemp` followed by `cp`); use that snapshot, not Git HEAD, so existing user edits are included. After editing, use the Rust comparison instead of writing ad hoc Python preservation checks:
+
+```bash
+"$skill_dir/scripts/vault-check/target/release/vault-check" preserve --quiet "$before_note" "path/to/note.md"
+```
+
+Set `before_note` to the actual pre-edit snapshot. Exit 0 means no tracked findings; 1 means `REVIEW` findings to assess; 2 means a read, incomplete-structure, or usage error. `--quiet` suppresses only the clean summary. The command reads two files and never modifies them; it needs no Python.
+
+It compares frontmatter text (ignoring CRLF/LF differences) and counts headings, wikilinks, wiki embeds, block IDs, and recognized exam/year mentions. Additions and reordering are allowed; removed occurrences and changed frontmatter are reported. Renames, alias/size changes, and deliberate duplicate consolidation can legitimately produce findings. Inspect them against the requested edit; do not automatically restore old content or request permission for routine authorized changes.
+
+This is a lightweight structural scan: fences and inline-code link examples are excluded; ordinary Markdown/HTML links, prose, equations, and general citations are not inventoried. Exam detection recognizes GATE, ESE/IES, RRB/SSC (optionally JE), JKSSB, and ISRO followed by a nearby year, with limited qualifiers. It does not resolve targets, validate YAML, render notes, or prove technical completeness. Keep the normal syntax check, diff review, and source-to-note completeness review. If the snapshot is unavailable, report that limitation rather than treating a different baseline as the original.

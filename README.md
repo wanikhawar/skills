@@ -100,7 +100,9 @@ Install dependencies within the user-authorized scope. Check existing tools and 
 
 | Workflow | Requirements and fallback |
 | --- | --- |
-| Markdown and Bases validators | Python 3 and PyYAML. Check with `python3 -c "import yaml"`; use an existing compatible environment when available. |
+| Vault workflow CLI | Rust `vault find`, `vault recent`, and `vault check`; built alongside `vault-check`. Git for `--changed`; `xdg-open` for opening notes. See [Vault Operator](vault-operator/SKILL.md#fast-vault-commands). |
+| Markdown validator | Compiled Rust `vault-check`; Cargo needed only to build/rebuild. Python 3/PyYAML handles uncommon YAML compatibility cases and serves as a full fallback. |
+| Bases validator | Python 3 and PyYAML. |
 | Canvas validator and CLI detector | Python 3 standard library. |
 | Obsidian semantic queries and previews | Obsidian running with its CLI enabled and registered. The detector checks version and help responses; filesystem operations remain available when the CLI is unverified. |
 | Public HTML extraction | Defuddle CLI, or an available web-reading tool when Defuddle is unavailable or the page is unsupported. |
@@ -117,8 +119,13 @@ For example, replace the placeholder below with the absolute path to the install
 
 ```bash
 skill_dir="/absolute/path/to/obsidian-markdown"
-python3 "$skill_dir/scripts/validate_note.py" "Thermodynamics/Entropy.md"
+cargo build --release --locked --manifest-path "$skill_dir/scripts/vault-check/Cargo.toml"
+"$skill_dir/scripts/vault-check/target/release/vault-check" note --quiet "Thermodynamics/Entropy.md"
 ```
+
+The build also produces `target/release/vault`: ranked title/alias/content search, recent notes, and changed-note syntax/embed checks. Keep both binaries together. For terminal access, install both release binaries into `~/.local/bin` (without replacing unrelated commands). Once installed, Cargo's generated `target/` directory can be removed and recreated by the next build.
+
+Build once, then invoke the release binary directly. Batch changed notes in one call; `--quiet` retains warnings and errors while suppressing OK lines. Keep `scripts/vault-check/` with the Markdown skill; its build output is ignored by Git.
 
 The CLI detector can return a machine-readable result:
 
@@ -135,18 +142,19 @@ Each skill documents its own helper arguments and validation workflow.
 
 Static checks support review; they do not prove visual or semantic correctness:
 
-- Markdown checks frontmatter, fences, math/link delimiter balance, and table structure.
+- Markdown checks frontmatter, fences, math/link delimiter balance, and table structure. Its Rust `preserve BEFORE AFTER` command reports structural losses and frontmatter changes using a pre-edit snapshot; see the Markdown skill for coverage and review semantics.
 - Bases checks known structure and formula-reference fields. Duration warnings are heuristic; formulas still need evaluation in Obsidian.
 - Canvas checks required fields, types, IDs, edge references, and layout constraints. Unknown extension types produce warnings; malformed values produce errors.
 - PDF workflows combine structural inspection with rendered-page checks.
 
-Run helper regression tests from the collection root with Python 3 and PyYAML available:
+Build the Rust release binary using the command above, then run helper regression tests from the collection root with Python 3 and PyYAML available (Rust tests are skipped if the binary is absent):
 
 ```bash
+cargo test --locked --manifest-path obsidian-markdown/scripts/vault-check/Cargo.toml
 python3 -B -m unittest discover -s tests -v
 ```
 
-Tests cover Markdown code and delimiter handling, Base property/expression distinctions, malformed Canvas values, helper invocation outside the skill directory, and CLI detection. They use temporary fixtures and mocked CLI responses; they do not launch Obsidian or modify vault notes. Passing them does not establish live CLI compatibility or rendered correctness.
+The CLI integration tests cover ranking, aliases, URI generation, recency, Git changes/renames, missing embeds, and argument errors in temporary vaults. Tests compare Rust/Python Markdown results on edge cases and 150 seeded generated samples, check quiet mode, read failures, and ordinary YAML without Python. They also cover Markdown code and delimiter handling, Base property/expression distinctions, malformed Canvas values, helper invocation outside the skill directory, and CLI detection. They use temporary fixtures and mocked CLI responses; they do not launch Obsidian or modify vault notes. Passing them does not establish live CLI compatibility or rendered correctness.
 
 ## Repository structure
 
