@@ -36,7 +36,8 @@ When the Obsidian CLI is available, verify its target with `obsidian vault info=
 Choose the mechanism that preserves the most Obsidian semantics with the least risk:
 
 - Exact read or inspection: direct filesystem read.
-- Ranked note discovery by title, alias, or literal content: use `vault find "query"`; use `vault recent` to resume recent work. Use `rg --files` / `rg` for exact filename or scoped pattern searches.
+- Subject/concept discovery: follow the vault’s `AGENTS.md`; here use `vault-search search "query" --compact --limit 3`, then read relevant source ranges. Expand to six results or related terms only when needed; `--all-terms` narrows matching to one section. See `.agents/skills/vault-operator/scripts/vault-search/README.md` for search limits and fallback.
+- Known-title/alias discovery: `vault find "query"`; exact filenames/scoped text: `rg --files` / `rg`. Use `vault recent` to resume work. These complement indexed concept search; avoid redundant lookups.
 - Small text edit: anchored patch; read the changed region back.
 - Typed property change, backlink query, unresolved-link check, or Base query: Obsidian CLI when available.
 - Move or rename: prefer Obsidian CLI so link updates follow vault settings.
@@ -47,7 +48,16 @@ Do not use a GUI launcher as if it were the Obsidian CLI. Follow the `obsidian-c
 
 ## Fast vault commands
 
-The Rust `vault` and `vault-check` binaries are installed together in `~/.local/bin`. If `vault` is unavailable, build and install both from `../obsidian-markdown/scripts/vault-check/` relative to this skill; build instructions are in `obsidian-markdown`. Run the installed binary directly during routine work.
+The Rust `vault` source lives in `scripts/vault-cli/` relative to this skill; `vault-search` lives in `scripts/vault-search/` (see its [README](scripts/vault-search/README.md) for build/install steps). The separate Markdown validator `vault-check` lives in `../obsidian-markdown/scripts/vault-check/`. Install `vault` and `vault-check` into the same directory because `vault check` invokes its sibling validator. Build or install both from their respective manifests when missing or after source changes; run the installed binaries directly during routine work. Set `skill_dir` to the absolute directory containing this `SKILL.md` before running the commands below.
+
+```bash
+cargo build --release --locked --manifest-path "$skill_dir/scripts/vault-cli/Cargo.toml"
+cargo build --release --locked --manifest-path "$skill_dir/../obsidian-markdown/scripts/vault-check/Cargo.toml"
+cargo install --path "$skill_dir/scripts/vault-cli" --root "$HOME/.local" --locked --force
+cargo install --path "$skill_dir/../obsidian-markdown/scripts/vault-check" --root "$HOME/.local" --locked --force
+```
+
+`cargo install` produces the shared `~/.local/bin` pair; ensure it is on `PATH`. If installing is unavailable, place both built binaries in one directory before running `vault check`.
 
 ```bash
 vault find "entropy" --limit 10

@@ -27,13 +27,13 @@ skill_dir="/absolute/path/to/obsidian-markdown"
 
 Use the compiled Rust validator below; it accepts multiple files in one invocation. Ordinary frontmatter needs no Python. Uncommon YAML tags, aliases, complex keys, or parser disagreements use Python 3/PyYAML for compatibility. If that fallback is unavailable, the check reports an error; do not claim validation succeeded.
 
-The release binaries `vault-check` and `vault` are built once per machine (and rebuilt after source changes):
+Build the release validator once per machine (and rebuild after source changes):
 
 ```bash
 cargo build --release --locked --manifest-path "$skill_dir/scripts/vault-check/Cargo.toml"
 ```
 
-Both binaries must remain in the same directory because `vault check` invokes its sibling `vault-check`. Install both into `~/.local/bin`; they do not need to remain linked to Cargo's generated `target/` directory.
+The separate `vault` workflow CLI is sourced from `../vault-operator/scripts/vault-cli/` relative to this skill. Build and install it using `vault-operator` when needed. Install `vault` and `vault-check` into the same directory because `vault check` invokes its sibling validator. They do not need to remain linked to Cargo's generated `target/` directories.
 
 Run the existing binary directly during routine edits; do not run Cargo or check Python dependencies each time. Source and locked dependencies live in `scripts/vault-check/`. If Rust cannot be built, the retained `scripts/validate_note.py` is a fallback requiring Python 3 and PyYAML. Report which fallback was used.
 
@@ -163,7 +163,7 @@ For files inside a vault, prefer the workflow CLI, which adds embedded-file chec
 vault check --quiet -- "path/to/note.md"
 ```
 
-Pass the exact edited files together. Use `vault check --changed --quiet` only for a session-wide check; it includes staged, unstaged and untracked notes in the vault's owning Git repository, excluding hidden paths and deletions, without inspecting nested repositories. Root selection and static embed-check limitations are documented in `vault-operator`. If `vault` is not on PATH, invoke `"$skill_dir/scripts/vault-check/target/release/vault"` directly. Exit 1 includes missing/ambiguous embedded files; exit 2 is a usage/operational error. Heading and block fragments are not checked.
+Pass the exact edited files together. Use `vault check --changed --quiet` only for a session-wide check; it includes staged, unstaged and untracked notes in the vault's owning Git repository, excluding hidden paths and deletions, without inspecting nested repositories. Root selection and static embed-check limitations are documented in `vault-operator`. If `vault` is not on PATH, build it from `../vault-operator/scripts/vault-cli/` and place it beside `vault-check` before invoking `vault check`. Exit 1 includes missing/ambiguous embedded files; exit 2 is a usage/operational error. Heading and block fragments are not checked.
 
 For standalone files, syntax-only checks, or when the workflow CLI is unavailable, run:
 

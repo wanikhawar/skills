@@ -1,0 +1,3 @@
+interface:
+  display_name: "Semantic Note Linker"
+  short_description: "Add relevant vault links without losing note content"

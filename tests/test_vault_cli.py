@@ -1,14 +1,25 @@
 """Integration tests against the compiled vault CLI; never mutate the real vault."""
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
 
-BIN = Path(__file__).resolve().parents[1] / 'obsidian-markdown/scripts/vault-check/target/release/vault'
+SKILLS = Path(__file__).resolve().parents[1]
+VAULT_BIN = SKILLS / 'vault-operator/scripts/vault-cli/target/release/vault'
+CHECK_BIN = SKILLS / 'obsidian-markdown/scripts/vault-check/target/release/vault-check'
 
-@unittest.skipUnless(BIN.is_file(), "build the Rust release binaries first")
+@unittest.skipUnless(VAULT_BIN.is_file() and CHECK_BIN.is_file(), "build both Rust release binaries first")
 class VaultCLI(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.binaries = tempfile.TemporaryDirectory(prefix='vault binaries ')
+        cls.addClassCleanup(cls.binaries.cleanup)
+        cls.bin = Path(cls.binaries.name) / 'vault'
+        shutil.copy2(VAULT_BIN, cls.bin)
+        shutil.copy2(CHECK_BIN, Path(cls.binaries.name) / 'vault-check')
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='vault cli ')
         self.addCleanup(self.temp.cleanup)
@@ -30,7 +41,7 @@ class VaultCLI(unittest.TestCase):
     def run_cli(self, *args, code=0, cwd=None):
         env = dict(os.environ)
         env.pop('VAULT_ROOT', None)
-        p = subprocess.run([str(BIN), *args], cwd=cwd or self.root, env=env, capture_output=True, text=True)
+        p = subprocess.run([str(self.bin), *args], cwd=cwd or self.root, env=env, capture_output=True, text=True)
         self.assertEqual(p.returncode, code, p.stdout + p.stderr)
         return p.stdout
 
