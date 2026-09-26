@@ -1,6 +1,6 @@
 # Agent Skills
 
-Eleven reusable skills for Obsidian workflows, mechanical-engineering study, web content extraction, and PDF processing. Each skill provides task-specific instructions; some include reference material and executable helpers.
+Twelve reusable skills for Obsidian workflows, mechanical-engineering study, web content extraction, and PDF processing. Each skill provides task-specific instructions; some include reference material and executable helpers.
 
 ## Included skills
 
@@ -27,6 +27,7 @@ Eleven reusable skills for Obsidian workflows, mechanical-engineering study, web
 | Skill | What it does |
 | --- | --- |
 | [Engineering Visualizer](engineering-visualizer/SKILL.md) | Creates technically accurate Mermaid diagrams, SVG schematics, and plots. Distinguishes temporary generation files from persistent source deliverables. |
+| [Feynman Technique](feynman-technique/SKILL.md) | Runs interactive learn-by-explaining sessions: the learner explains first, then targeted probes, gap repair, and a transfer problem, grounded in the learner's notes. |
 | [ME Concept Tutor](me-concept-tutor/SKILL.md) | Explains concepts, derivations, and exam distinctions from governing principles, with depth matched to the request. |
 | [Syllabus Gap Audit](syllabus-gap-audit/SKILL.md) | Compares notes with official syllabi, assessing coverage, correctness, and navigation independently. Separates stated syllabus depth from evidence-backed preparation inferences. |
 
@@ -103,13 +104,13 @@ Install dependencies within the user-authorized scope. Check existing tools and 
 
 | Workflow | Requirements and fallback |
 | --- | --- |
-| Vault workflow CLI | Rust `vault find`, `vault recent`, and `vault check` live under `vault-operator/scripts/vault-cli/`; the sibling `vault-check` binary lives under `obsidian-markdown/scripts/vault-check/`. Git supports `--changed`; `xdg-open` opens notes. See [Vault Operator](vault-operator/SKILL.md#fast-vault-commands). |
+| Vault workflow CLI | Rust `vault find`, `vault recent`, and `vault check` live under `vault-operator/scripts/vault-cli/`; the sibling `vault-check` binary lives under `obsidian-markdown/scripts/vault-check/`. Git supports `--changed`; `xdg-open` opens notes. See the [Vault CLI reference](vault-operator/references/VAULT-CLI.md). |
 | Vault concept search | Rust `vault-search` lives under `vault-operator/scripts/vault-search/`; it requires SQLite with FTS5. See its [usage and installation guide](vault-operator/scripts/vault-search/README.md). |
 | Markdown validator | Compiled Rust `vault-check`; Cargo needed only to build/rebuild. Python 3/PyYAML handles uncommon YAML compatibility cases and serves as a full fallback. |
 | Bases validator | Python 3 and PyYAML. |
 | Canvas validator and CLI detector | Python 3 standard library. |
 | Obsidian semantic queries and previews | Obsidian running with its CLI enabled and registered. The detector checks version and help responses; filesystem operations remain available when the CLI is unverified. |
-| Note interlinking | Rust `vault find` (or scoped filesystem search) for candidate discovery; Git for the diff review gate. The Obsidian CLI is optional for resolved-link and backlink checks. |
+| Note interlinking | Rust `vault find` and `vault-search` (or scoped filesystem search) for candidate discovery; Git for the diff review gate. The Obsidian CLI is optional for resolved-link and backlink checks. |
 | Public HTML extraction | Defuddle CLI, or an available web-reading tool when Defuddle is unavailable or the page is unsupported. |
 | PDF helper | `uv` and Python 3.11+. PEP 723 metadata declares compatible PyMuPDF and pypdf ranges; these are not locked versions. `uv run` may download dependencies. |
 | Additional PDF workflows | Poppler’s `pdfinfo` for inspection; OCRmyPDF, Tesseract, and Ghostscript for OCR. See the PDF workflow reference for other operations. |
@@ -130,7 +131,7 @@ cargo build --release --locked --manifest-path "$skills_dir/vault-operator/scrip
 "$skills_dir/obsidian-markdown/scripts/vault-check/target/release/vault-check" note --quiet "Thermodynamics/Entropy.md"
 ```
 
-The first build produces `target/release/vault`: ranked title/alias/content search, recent notes, and changed-note syntax/embed checks. Keep `vault` and `vault-check` together at runtime. For terminal access, install both into `~/.local/bin` using the commands in [Vault Operator](vault-operator/SKILL.md#fast-vault-commands). Once installed, Cargo's generated `target/` directories can be removed and recreated by the next build.
+The first build produces `target/release/vault`: ranked title/alias/content search, recent notes, and changed-note syntax/embed checks. Keep `vault` and `vault-check` together at runtime. For terminal access, install both into `~/.local/bin` using the commands in the [Vault CLI reference](vault-operator/references/VAULT-CLI.md). Once installed, Cargo's generated `target/` directories can be removed and recreated by the next build.
 
 Build once, then invoke the installed binaries directly. Batch changed notes in one call; `--quiet` retains warnings and errors while suppressing OK lines. Keep each Rust project with its owning skill; their build outputs are ignored by Git.
 

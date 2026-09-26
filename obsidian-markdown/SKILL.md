@@ -27,15 +27,7 @@ skill_dir="/absolute/path/to/obsidian-markdown"
 
 Use the compiled Rust validator below; it accepts multiple files in one invocation. Ordinary frontmatter needs no Python. Uncommon YAML tags, aliases, complex keys, or parser disagreements use Python 3/PyYAML for compatibility. If that fallback is unavailable, the check reports an error; do not claim validation succeeded.
 
-Build the release validator once per machine (and rebuild after source changes):
-
-```bash
-cargo build --release --locked --manifest-path "$skill_dir/scripts/vault-check/Cargo.toml"
-```
-
-The separate `vault` workflow CLI is sourced from `../vault-operator/scripts/vault-cli/` relative to this skill. Build and install it using `vault-operator` when needed. Install `vault` and `vault-check` into the same directory because `vault check` invokes its sibling validator. They do not need to remain linked to Cargo's generated `target/` directories.
-
-Run the existing binary directly during routine edits; do not run Cargo or check Python dependencies each time. Source and locked dependencies live in `scripts/vault-check/`. If Rust cannot be built, the retained `scripts/validate_note.py` is a fallback requiring Python 3 and PyYAML. Report which fallback was used.
+Run the existing binary directly during routine edits; do not run Cargo or check Python dependencies each time. Source and locked dependencies live in `scripts/vault-check/`. If the binary is missing, build or install it (together with the `vault` workflow CLI, which must share its directory) using `vault-operator`'s [Vault CLI reference](../vault-operator/references/VAULT-CLI.md); standalone, run `cargo build --release --locked --manifest-path "$skill_dir/scripts/vault-check/Cargo.toml"`. If Rust cannot be built, the retained `scripts/validate_note.py` is a fallback requiring Python 3 and PyYAML. Report which fallback was used.
 
 ## Authorization and workflow
 

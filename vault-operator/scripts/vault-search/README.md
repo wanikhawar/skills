@@ -51,7 +51,7 @@ vault-search index
 
 Ensure `$HOME/.local/bin` is on `PATH`. Alternatively run the built binary at `.agents/skills/vault-operator/scripts/vault-search/target/release/vault-search`, or use `cargo run --release --manifest-path .agents/skills/vault-operator/scripts/vault-search/Cargo.toml -- search "topic"`. The `open` command uses `xdg-open` on Linux and `open` on macOS; `open --uri` prints the encoded URI without launching an application.
 
-The root `AGENTS.md` instructs assistants to search this vault before answering subject questions, read the relevant sections, and distinguish note-supported information from additional reasoning. Indexing and searching never modify source notes.
+The root `AGENTS.md` decides when assistants search the vault. When they do, they read the relevant sections before relying on them and distinguish note-supported information from additional reasoning. Indexing and searching never modify source notes.
 
 ## Efficient tool routing
 

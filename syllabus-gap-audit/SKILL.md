@@ -65,7 +65,7 @@ For every source capture:
 - recruitment route and scope caveats;
 - retrieval date.
 
-Do not use search snippets, coaching answer pages, or copied answer keys as syllabus evidence.
+Do not use search snippets, coaching answer pages, or copied answer keys as syllabus evidence. Syllabus notes already in the vault are useful starting points for scope and wording, but they are not official evidence: verify them against the official source and report any discrepancy.
 
 ## Normalize requirements
 
@@ -83,8 +83,8 @@ Do not force every exam into the same granularity. Preserve differences in wordi
 
 1. Resolve exact paths using `vault-operator`.
 2. Read the target MOC/overview first when one exists.
-3. List notes in scope and search filenames using syllabus terms and synonyms.
-4. Search contents to identify candidate coverage.
+3. List notes in scope and search filenames using syllabus terms and synonyms (where installed, `vault find "term"`; otherwise `rg --files`).
+4. Search contents to identify candidate coverage (where installed, `vault-search search "topic" --compact --limit 6`, adding `--all-terms` for multiword topics; otherwise `rg -n`). Search each synonym separately: the search is not semantic.
 5. Read each candidate section before assigning status.
 6. Record the exact note and heading that provide evidence.
 7. Check discoverability through MOC links when navigation is in scope.
