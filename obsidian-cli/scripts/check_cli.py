@@ -40,6 +40,39 @@ def is_gui_wrapper(path: Path) -> bool:
     return "electron" in lowered and "app.asar" in lowered
 
 
+def cli_enabled() -> bool:
+    """Return True when Obsidian's own config records the CLI as enabled."""
+    config_home = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+    try:
+        data = json.loads((config_home / "obsidian" / "obsidian.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return isinstance(data, dict) and data.get("cli") is True
+
+
+def obsidian_running() -> bool:
+    """Return True when an Obsidian app process is already running (Linux /proc)."""
+    proc = Path("/proc")
+    if not proc.is_dir():
+        return False
+    for entry in proc.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            cmdline = (entry / "cmdline").read_bytes().lower()
+        except OSError:
+            continue
+        if b"obsidian" in cmdline and b"app.asar" in cmdline:
+            return True
+    return False
+
+
+def wrapper_probe_allowed() -> bool:
+    # A packaged launcher (e.g. Arch/AUR) forwards CLI commands to the running app
+    # once the CLI is enabled. Probe it only then, so the check cannot open a window.
+    return cli_enabled() and obsidian_running()
+
+
 def recognizable_version(output: str) -> bool:
     return bool(re.fullmatch(
         r"(?:Obsidian\s+)?\d+\.\d+(?:\.\d+)?(?:[-+][\w.-]+)?"
@@ -63,8 +96,10 @@ def main() -> int:
         if not path.is_file() or not os.access(path, os.X_OK):
             continue
         if is_gui_wrapper(path):
-            diagnostic(f"SKIP GUI wrapper: {path}")
-            continue
+            if not wrapper_probe_allowed():
+                diagnostic(f"SKIP GUI wrapper: {path} (CLI not enabled or Obsidian not running)")
+                continue
+            diagnostic(f"PROBE GUI wrapper: {path} (CLI enabled and Obsidian running)")
         try:
             result = subprocess.run(
                 [str(path), "version"],
@@ -97,8 +132,9 @@ def main() -> int:
             print(f"CLI {executable}: {output}")
         return 0
     diagnostic(
-        "Obsidian CLI unavailable. Enable Settings → General → Command line interface; "
-        "on Linux ensure ~/.local/bin precedes the GUI launcher in PATH."
+        "Obsidian CLI unavailable. Enable Settings → General → Command line interface "
+        "and keep Obsidian running; on Linux ensure ~/.local/bin precedes the GUI launcher "
+        "in PATH when a separate CLI is registered there."
     )
     return 1
 

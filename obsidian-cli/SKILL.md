@@ -26,12 +26,12 @@ The helper uses Python 3 and its standard library.
 Before depending on the CLI:
 
 1. Resolve the executable with `command -v obsidian`.
-2. On Linux, prefer the registered CLI at `~/.local/bin/obsidian`. A distro `/usr/bin/obsidian` may be a shell wrapper that launches Electron.
-3. Inspect a suspicious wrapper before running it. Do not pass `help` to a GUI launcher.
+2. On Linux, prefer the registered CLI at `~/.local/bin/obsidian`. A distro `/usr/bin/obsidian` may be a shell wrapper that launches Electron. Some packaged installs (e.g. Arch/AUR) register no separate CLI; once the CLI is enabled (`"cli": true` in `~/.config/obsidian/obsidian.json`), that wrapper forwards CLI commands to the running app and is itself the CLI.
+3. Inspect a suspicious wrapper before running it. Do not pass `help` to a GUI launcher unless the CLI is enabled and Obsidian is already running; otherwise it may open a window instead of answering.
 4. Run a short-timeout `version` or `help` check. If it does not return CLI output promptly, treat the CLI as unavailable and use safe filesystem operations.
 5. Do not repeatedly launch Obsidian while probing availability.
 
-The bundled check performs these tests without executing a known GUI wrapper:
+The bundled check performs these tests. It executes a known GUI wrapper only when Obsidian's config records the CLI as enabled and an Obsidian process is already running (Linux `/proc` check), so the probe cannot launch a window:
 
 ```bash
 python3 "$skill_dir/scripts/check_cli.py" --json

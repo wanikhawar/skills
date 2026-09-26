@@ -3,6 +3,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -163,6 +164,53 @@ class CliTests(unittest.TestCase):
         status, _, calls, _ = self.probe([subprocess.TimeoutExpired('version', 5)])
         self.assertEqual(status, 1)
         self.assertEqual(len(calls), 1)
+
+    def probe_wrapper(self, allowed, responses=()):
+        with tempfile.TemporaryDirectory() as directory:
+            executable = Path(directory) / 'obsidian'
+            executable.write_text('#!/bin/bash\nexec electron43 /usr/lib/obsidian/app.asar "$@"\n')
+            executable.chmod(0o700)
+            output = io.StringIO()
+            with patch.object(CLI, 'candidates', return_value=iter([executable])), \
+                 patch.object(CLI, 'wrapper_probe_allowed', return_value=allowed), \
+                 patch.object(CLI.subprocess, 'run', side_effect=list(responses)) as run, \
+                 patch('sys.argv', ['check_cli.py', '--json']), \
+                 contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
+                status = CLI.main()
+            return status, output.getvalue(), run.call_args_list, str(executable)
+
+    def test_gui_wrapper_is_not_run_unless_cli_enabled_and_running(self):
+        status, output, calls, _ = self.probe_wrapper(False)
+        self.assertEqual(status, 1)
+        self.assertEqual(output, '')
+        self.assertEqual(calls, [])
+
+    def test_gui_wrapper_is_verified_when_cli_enabled_and_running(self):
+        status, output, calls, executable = self.probe_wrapper(True, [
+            subprocess.CompletedProcess([], 0, '1.13.7 (installer 1.13.7)', ''),
+            subprocess.CompletedProcess([], 0, 'Obsidian CLI\n  read path=<path>\n  search query=<text>\n  vault\n', '')])
+        self.assertEqual(status, 0)
+        self.assertEqual(json.loads(output)['executable'], executable)
+        self.assertEqual(len(calls), 2)
+
+    def test_cli_enabled_reads_obsidian_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory, 'obsidian')
+            config.mkdir()
+            with patch.dict(os.environ, {'XDG_CONFIG_HOME': directory}):
+                self.assertFalse(CLI.cli_enabled())
+                (config / 'obsidian.json').write_text('{"vaults": {}, "cli": true}')
+                self.assertTrue(CLI.cli_enabled())
+                (config / 'obsidian.json').write_text('{"vaults": {}, "cli": false}')
+                self.assertFalse(CLI.cli_enabled())
+                (config / 'obsidian.json').write_text('not json')
+                self.assertFalse(CLI.cli_enabled())
+
+    def test_wrapper_probe_requires_both_conditions(self):
+        for enabled, running, expected in [(True, True, True), (True, False, False), (False, True, False)]:
+            with patch.object(CLI, 'cli_enabled', return_value=enabled), \
+                 patch.object(CLI, 'obsidian_running', return_value=running):
+                self.assertEqual(CLI.wrapper_probe_allowed(), expected)
 
 
 if __name__ == '__main__':
